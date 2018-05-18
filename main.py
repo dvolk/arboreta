@@ -3,10 +3,8 @@ import uuid
 import json
 import requests
 import argparse
-import pathlib
 import glob
 import gzip
-import string
 
 def get_neighbours(guid, reference, distance, quality, elephantwalkurl):
     url = "{0}/sample/findneighbour/snp/{1}/{2}/{3}/elephantwalk/{4}".format(elephantwalkurl, guid, reference, distance, quality)
