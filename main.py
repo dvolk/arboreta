@@ -21,22 +21,22 @@ def get_neighbours(guid, reference, distance, quality, elephantwalkurl):
     return guids
 
 def concat_fasta(guids, reference, out_file):
-    out = open(out_file, "w")
-    for guid in guids:
-        pattern = "/mnt/microbio/ndm-hicf/ogre/pipeline_output/{0}/MAPPING/*_{1}/STD/basecalls/{0}*.fasta.gz".format(guid, reference)
-        files = glob.glob(pattern)
-        if not files:
-            print("ERROR: Couldn't find file matching pattern {0}".format(pattern))
-            exit(1)
-        if len(files) > 1:
-            print("ERROR: Found more than one file matching pattern {0}".format(pattern))
-            exit(1)
-        #print("processing {0}".format(files[0]))
-        fasta_gzip = open(files[0], mode="rb").read()
-        fasta = "".join(gzip.decompress(fasta_gzip).decode('ascii').split('\n')[1:])
+    with open(out_file, "w") as out:
+        for guid in guids:
+            pattern = "/mnt/microbio/ndm-hicf/ogre/pipeline_output/{0}/MAPPING/*_{1}/STD/basecalls/{0}*.fasta.gz".format(guid, reference)
+            files = glob.glob(pattern)
+            if not files:
+                print("ERROR: Couldn't find file matching pattern {0}".format(pattern))
+                exit(1)
+            if len(files) > 1:
+                print("ERROR: Found more than one file matching pattern {0}".format(pattern))
+                exit(1)
+            print("processing {0}".format(files[0]))
+            fasta_gzip = open(files[0], mode="rb").read()
+            fasta = "".join(gzip.decompress(fasta_gzip).decode('ascii').split('\n')[1:])
 
-        out.write(">{0}\n".format(guid))
-        out.write("{0}\n".format(fasta))
+            out.write(">{0}\n".format(guid))
+            out.write("{0}\n".format(fasta))
 
 def go():
     parser = argparse.ArgumentParser()
