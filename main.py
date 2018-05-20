@@ -157,9 +157,11 @@ def get_run_index(guid, n):
         return "run is already queued\n"
     else:
         run_uuid = str(uuid.uuid4())
+        db_lock.acquire()
         con.execute('insert into queue values (?,?,?,?,?,?,?,?)',
                     (guid,run_uuid,"queued","http://192.168.7.90:9184",reference,distance,quality,str(int(time.time()))))
         con.commit()
+        db_lock.release()
         return "run added to queue\n"
 
 #
