@@ -120,8 +120,8 @@ def demon_interface():
             db_lock.release()
             print("done with {0}", elem)
 
-        print("sleeping")
-        time.sleep(1)
+        if int(time.time()) % 100 == 0: print("daemon idle")
+        time.sleep(5)
 
 T = threading.Thread(target=demon_interface)
 T.start()
