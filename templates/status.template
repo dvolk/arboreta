@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    {% block head %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>getree status</title>
+    <style>
+      body {
+      font-size: 0.9em;
+      }
+      pre {
+      white-space: pre-wrap;
+      }
+    </style>
+    {% endblock head %}
+  </head>
+  <body>
+    <div class="container">
+      {% block content %}
+      <h1>getree status</h1>
+
+      <h2>Running</h2>
+      <table class="table table-hover table-sm">
+	<thead>
+	  <tr>
+	    <th scope="col">Sample GUID</th>
+	    <th scope="col">Reference</th>
+	    <th scope="col">Distance</th>
+	    <th scope="col">Quality</th>
+	  </tr>
+	</thead>
+	<tbody>
+	  {% for run in running %}
+	  <tr>
+	    <td scope="col">{{ run[0] }}</td>
+	    <td scope="col">{{ run[1] }}</td>
+	    <td scope="col">{{ run[2] }}</td>
+	    <td scope="col">{{ run[3] }}</td>
+	  </tr>
+	  {% endfor %}
+	</tbody>
+      </table>
+
+      <h2>Queued</h2>
+      <table class="table table-hover table-sm">
+	<thead>
+	  <tr>
+	    <th scope="col">Sample GUID</th>
+	    <th scope="col">Reference</th>
+	    <th scope="col">Distance</th>
+	    <th scope="col">Quality</th>
+	  </tr>
+	</thead>
+	<tbody>
+	  {% for run in queued %}
+	  <tr>
+	    <td scope="col">{{ run[0] }}</td>
+	    <td scope="col">{{ run[1] }}</td>
+	    <td scope="col">{{ run[2] }}</td>
+	    <td scope="col">{{ run[3] }}</td>
+	  </tr>
+	  {% endfor %}
+	</tbody>
+      </table>
+      <h2>Completed</h2>
+      <table class="table table-hover table-sm">
+	<thead>
+	  <tr>
+	    <th scope="col">Sample GUID</th>
+	    <th scope="col">Reference</th>
+	    <th scope="col">Distance</th>
+	    <th scope="col">Quality</th>
+	    <th scope="col"></th>
+	  </tr>
+	</thead>
+	<tbody>
+	  {% for run in completed %}
+	  <tr>
+	    <td scope="col">{{ run[0] }}</td>
+	    <td scope="col">{{ run[1] }}</td>
+	    <td scope="col">{{ run[2] }}</td>
+	    <td scope="col">{{ run[3] }}</td>
+	    <td scope="col"><a href="/tree/{{ run[0] }}?reference={{ run[1] }}&distance={{ run[2] }}&quality={{ run[3] }}">tree</a> / <a href="/neighbours/{{ run[0] }}?reference={{ run[1] }}&distance={{ run[2] }}&quality={{ run[3] }}">neighbours</a></td>
+	  </tr>
+	  {% endfor %}
+	</tbody>
+      </table>
+
+      <h2>Submit new</h2>
+      <form action="/new_run">
+	Sample GUID<br/>
+	<input type="text" name="guid"><br/>
+	Reference<br/>
+	<input type="text" name="reference"><br/>
+	Distance<br/>
+	<input type="text" name="distance"><br/>
+	Quality<br/>
+	<input type="text" name="quality"><br/>
+	<input type="submit" value="Submit">
+      </form>
+	
+
+      {% endblock content %}
+      
+      {% block footer %}
+      <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+      {% endblock footer %}
+  </body>
+</html>
+

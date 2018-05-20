@@ -10,7 +10,7 @@ import subprocess
 import threading
 import time
 
-from flask import Flask, request
+from flask import Flask, request, render_template
 
 con = sqlite3.connect('getree.sqlite', check_same_thread=False)
 db_lock = threading.Lock()
@@ -107,6 +107,12 @@ def demon_interface():
             elem = elem[0]
             print("starting {0}", elem)
             started = str(int(time.time()))
+            db_lock.acquire()
+            con.execute('update queue set status = "RUNNING" where sample_guid = ? and reference = ? and distance = ? and quality = ?',
+                        (elem[0], elem[4], elem[5], elem[6]))
+            con.commit()
+            db_lock.release()
+
             ret, neighbour_guids = go(elem[0], elem[1], elem[4], elem[5], elem[6], elem[3], 20,
                                       "../contrib/iqtree-1.6.5-Linux/bin/iqtree")
             ended = str(int(time.time()))
@@ -167,12 +173,27 @@ def get_run_index(guid, n):
 #
 # flask routes
 #
+@app.route('/status')
+def status():
+    db_lock.acquire()
+    running = con.execute('select sample_guid, reference, distance, quality from queue where status = "RUNNING"').fetchall()
+    queued = con.execute('select sample_guid, reference, distance, quality from queue where status <> "RUNNING"').fetchall()
+    completed = con.execute('select sample_guid, reference, distance, quality from complete').fetchall()
+    con.commit()
+    db_lock.release()
+    return render_template('status.template', running=running, queued=queued, completed=completed)
+
 @app.route('/neighbours/<guid>')
 def get_neighbours(guid):
     return get_run_index(guid, 9)
 
 @app.route('/tree/<guid>')
 def get_tree(guid):
+    return get_run_index(guid, 10)
+
+@app.route('/new_run')
+def new_run():
+    guid = request.args.get('guid')
     return get_run_index(guid, 10)
 
 @app.route('/queue')
@@ -186,7 +207,7 @@ def get_queue():
 @app.route('/complete')
 def get_complete():
     db_lock.acquire()
-    complete = con.execute('select sample_guid, reference, distance, quality from complete').fetchall()
+    completed = con.execute('select sample_guid, reference, distance, quality from complete').fetchall()
     con.commit()
     db_lock.release()
-    return json.dumps(complete)
+    return json.dumps(completed)
