@@ -1,6 +1,6 @@
 # getree
 
-API
+## API
 
 ### `/neighbours/<guid>[?reference=R00000039&distance=20&quality=0.08]`
 
