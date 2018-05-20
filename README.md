@@ -2,11 +2,13 @@
 
 ## API
 
-### `/neighbours/<guid>[?reference=R00000039&distance=20&quality=0.08]`
+`<>` parameters are mandatory. Query parameters (`?...`) are optional. Default query parameters are shown below.
+
+### `/neighbours/<guid>?reference=R00000039&distance=20&quality=0.08`
 
 return json array of neighbours from database or add to run queue if not in database
 
-### `/tree/<guid>[?reference=R00000039&distance=20&quality=0.08]`
+### `/tree/<guid>?reference=R00000039&distance=20&quality=0.08`
 
 return tree from database or add to run queue if not in database
   
@@ -21,3 +23,7 @@ get json array of complete runs
 ### `/status`
 
 human-readable status page
+
+### `/new_run?guid=<guid>&reference=R00000039&distance=20&quality=0.08`
+
+Same as `/tree` but the guid is a query parameter
