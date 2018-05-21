@@ -18,10 +18,9 @@ from flask import Flask, request, render_template
 con = sqlite3.connect('getree.sqlite', check_same_thread=False)
 db_lock = threading.Lock()
 
+config = None
 with open("getree.yaml", "r") as f:
     config = yaml.load(f)
-    _elephantwalkurl = config['elephantwalkurl']
-    _pattern = config['pattern']
 
 def demon_interface():
     #
@@ -49,7 +48,7 @@ def demon_interface():
         with open(out_file, "w") as out:
             for guid in guids:
                 print(guid)
-                pattern = _pattern.format(guid, reference)
+                pattern = config['pattern'].format(guid, reference)
                 files = glob.glob(pattern)
                 if not files:
                     print("ERROR: Couldn't find file matching pattern {0}".format(pattern))
@@ -122,7 +121,7 @@ def demon_interface():
             con.commit()
             db_lock.release()
 
-            ret, neighbour_guids = go(elem[0], elem[1], elem[4], elem[5], elem[6], elem[3], 20,
+            ret, neighbour_guids = go(elem[0], elem[1], elem[4], elem[5], elem[6], elem[3], config['iqtreecores'],
                                       "../contrib/iqtree-1.6.5-Linux/bin/iqtree")
             ended = str(int(time.time()))
             tree = _get_tree(elem[0], elem[4], elem[5], elem[6])
@@ -148,11 +147,11 @@ app = Flask(__name__)
 #
 def get_run_index(guid, n):
     reference = request.args.get('reference')
-    if not reference: reference = "R00000039"
+    if not reference: reference = config['default_reference']
     distance = request.args.get('distance')
-    if not distance: distance = "20"
+    if not distance: distance = config['default_distance']
     quality = request.args.get('quality')
-    if not quality: quality = "0.08"
+    if not quality: quality = config['default_quality']
 
     db_lock.acquire()
     queued = con.execute('select * from queue where sample_guid = ? and reference = ? and distance = ? and quality = ?',
@@ -174,7 +173,7 @@ def get_run_index(guid, n):
         run_uuid = str(uuid.uuid4())
         db_lock.acquire()
         con.execute('insert into queue values (?,?,?,?,?,?,?,?)',
-                    (guid,run_uuid,"queued",_elephantwalkurl,reference,distance,quality,str(int(time.time()))))
+                    (guid, run_uuid, "queued", config['elephantwalkurl'], reference, distance, quality, str(int(time.time()))))
         con.commit()
         db_lock.release()
         return "run added to queue\n"

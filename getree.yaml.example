@@ -1,2 +1,9 @@
 elephantwalkurl: "http://192.168.7.90:9184"
+
 pattern: "/mnt/microbio/ndm-hicf/ogre/pipeline_output/{0}/MAPPING/*_{1}/STD/basecalls/{0}*.fasta.gz"
+
+iqtreecores: "1"
+
+default_reference: "R00000039"
+default_distance: "20"
+default_quality: "0.80"
