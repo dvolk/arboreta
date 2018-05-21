@@ -9,6 +9,8 @@ import sqlite3
 import subprocess
 import threading
 import time
+import datetime
+import dateutil.relativedelta
 
 from flask import Flask, request, render_template
 
@@ -31,6 +33,7 @@ def demon_interface():
             print("Error: elephantwalk returned 0 guids")
             exit(1)
         print("Found {0} guids".format(len(guids)))
+        print(guids)
         return guids
 
     #
@@ -39,6 +42,7 @@ def demon_interface():
     def concat_fasta(guids, reference, out_file):
         with open(out_file, "w") as out:
             for guid in guids:
+                print(guid)
                 pattern = "/mnt/microbio/ndm-hicf/ogre/pipeline_output/{0}/MAPPING/*_{1}/STD/basecalls/{0}*.fasta.gz".format(
                     guid, reference)
                 files = glob.glob(pattern)
@@ -178,10 +182,18 @@ def status():
     db_lock.acquire()
     running = con.execute('select sample_guid, reference, distance, quality from queue where status = "RUNNING"').fetchall()
     queued = con.execute('select sample_guid, reference, distance, quality from queue where status <> "RUNNING"').fetchall()
-    completed = con.execute('select sample_guid, reference, distance, quality from complete').fetchall()
+    completed_ = con.execute('select sample_guid, reference, distance, quality, epoch_start, epoch_end from complete').fetchall()
     con.commit()
     db_lock.release()
-    return render_template('status.template', running=running, queued=queued, completed=completed)
+    completed = []
+    daemon_alive = T.is_alive()
+    for run in completed_:
+        completed.append(list(run))
+    for run in completed:
+        td = dateutil.relativedelta.relativedelta(datetime.datetime.fromtimestamp(float(run[5])),
+                                                  datetime.datetime.fromtimestamp(float(run[4])))
+        run.append("{0}h {1}m {2}s".format(td.days * 24 + td.hours, td.minutes, td.seconds))
+    return render_template('status.template', running=running, queued=queued, completed=completed, daemon_alive=daemon_alive)
 
 @app.route('/neighbours/<guid>')
 def get_neighbours(guid):

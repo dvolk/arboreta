@@ -21,6 +21,16 @@
       {% block content %}
       <h1>getree status</h1>
 
+      <div class="alert {% if daemon_alive %} alert-success {% else %} alert-danger {% endif %}">
+	{% if daemon_alive %}
+	Runner thread is alive.
+	{% else %}
+	Runner thread is dead.
+	This is an error resulting in new queued runs not being run.
+	Contact crookcs.it@ndm.ox.ac.uk for help.
+	{% endif %}
+      </div>
+
       <h2>Running</h2>
       <table class="table table-hover table-sm">
 	<thead>
@@ -72,6 +82,7 @@
 	    <th scope="col">Reference</th>
 	    <th scope="col">Distance</th>
 	    <th scope="col">Quality</th>
+	    <th scope="col">Time taken</th>
 	    <th scope="col"></th>
 	  </tr>
 	</thead>
@@ -82,23 +93,40 @@
 	    <td scope="col">{{ run[1] }}</td>
 	    <td scope="col">{{ run[2] }}</td>
 	    <td scope="col">{{ run[3] }}</td>
+	    <td scope="col">{{ run[6] }}</td>
 	    <td scope="col"><a href="/tree/{{ run[0] }}?reference={{ run[1] }}&distance={{ run[2] }}&quality={{ run[3] }}">tree</a> / <a href="/neighbours/{{ run[0] }}?reference={{ run[1] }}&distance={{ run[2] }}&quality={{ run[3] }}">neighbours</a></td>
 	  </tr>
 	  {% endfor %}
 	</tbody>
       </table>
 
-      <h2>Submit new</h2>
+      <h2>Submit new run</h2>
       <form action="/new_run">
-	Sample GUID<br/>
-	<input type="text" name="guid"><br/>
-	Reference<br/>
-	<input type="text" name="reference"><br/>
-	Distance<br/>
-	<input type="text" name="distance"><br/>
-	Quality<br/>
-	<input type="text" name="quality"><br/>
-	<input type="submit" value="Submit">
+	<div class="input-group mb-3">
+	  <div class="input-group-prepend">
+	    <span class="input-group-text" id="basic-addon1">Sample GUID</span>
+	  </div>
+	  <input class='input-group-text' type="text" name="guid"><br/>
+	</div>
+	<div class="input-group mb-3">
+	  <div class="input-group-prepend">
+	    <span class="input-group-text" id="basic-addon1">Reference</span>
+	  </div>
+	  <input class='input-group-text' type="text" name="reference"><br/>
+	</div>
+	<div class="input-group mb-3">
+	  <div class="input-group-prepend">
+	    <span class="input-group-text" id="basic-addon1">Distance</span>
+	  </div>
+	  <input class='input-group-text' type="text" name="distance"><br/>
+	</div>
+	<div class="input-group mb-3">
+	  <div class="input-group-prepend">
+	    <span class="input-group-text" id="basic-addon1">Quality</span>
+	  </div>
+	  <input class='input-group-text' type="text" name="quality"><br/>
+	</div>
+	<input type="submit" class='btn btn-primary' value="Submit">
       </form>
 	
 
