@@ -11,11 +11,17 @@ import threading
 import time
 import datetime
 import dateutil.relativedelta
+import yaml
 
 from flask import Flask, request, render_template
 
 con = sqlite3.connect('getree.sqlite', check_same_thread=False)
 db_lock = threading.Lock()
+
+with open("getree.yaml", "r") as f:
+    config = yaml.load(f)
+    _elephantwalkurl = config['elephantwalkurl']
+    _pattern = config['pattern']
 
 def demon_interface():
     #
@@ -43,8 +49,7 @@ def demon_interface():
         with open(out_file, "w") as out:
             for guid in guids:
                 print(guid)
-                pattern = "/mnt/microbio/ndm-hicf/ogre/pipeline_output/{0}/MAPPING/*_{1}/STD/basecalls/{0}*.fasta.gz".format(
-                    guid, reference)
+                pattern = _pattern.format(guid, reference)
                 files = glob.glob(pattern)
                 if not files:
                     print("ERROR: Couldn't find file matching pattern {0}".format(pattern))
@@ -169,7 +174,7 @@ def get_run_index(guid, n):
         run_uuid = str(uuid.uuid4())
         db_lock.acquire()
         con.execute('insert into queue values (?,?,?,?,?,?,?,?)',
-                    (guid,run_uuid,"queued","http://192.168.7.90:9184",reference,distance,quality,str(int(time.time()))))
+                    (guid,run_uuid,"queued",_elephantwalkurl,reference,distance,quality,str(int(time.time()))))
         con.commit()
         db_lock.release()
         return "run added to queue\n"

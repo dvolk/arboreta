@@ -1,0 +1,2 @@
+elephantwalkurl: "http://192.168.7.90:9184"
+pattern: "/mnt/microbio/ndm-hicf/ogre/pipeline_output/{0}/MAPPING/*_{1}/STD/basecalls/{0}*.fasta.gz"
