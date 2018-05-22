@@ -3,11 +3,12 @@
 ## Install
 
 ```
+$ sudo apt install python3-dateutil python3-yaml
 $ pip install flask
 $ git clone http://github.com/dvolk/getree
 $ cd getree
 $ cp getree.yaml.example getree.yaml
-edit getree.yaml and set whatever elephantwalkurl and file pattern you're using
+edit getree.yaml
 $ sqlite3 getree.sqlite
 CREATE TABLE queue (sample_guid, run_uuid, status, elephantwalkurl, reference, distance, quality, epoch_added);
 CREATE TABLE complete (sample_guid, run_uuid, elephantwalkurl, reference, distance, quality, epoch_added, epoch_start, epoch_end, neighbours, tree);
