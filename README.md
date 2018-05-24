@@ -1,15 +1,15 @@
-# getree
+# arboreta
 
 ## Install
 
 ```
 $ sudo apt install python3-dateutil python3-yaml
 $ pip install flask
-$ git clone http://github.com/dvolk/getree
-$ cd getree
-$ cp getree.yaml.example getree.yaml
-edit getree.yaml
-$ sqlite3 getree.sqlite
+$ git clone http://github.com/dvolk/arboreta
+$ cd arboreta
+$ cp arboreta.yaml.example arboreta.yaml
+edit arboreta.yaml
+$ sqlite3 arboreta.sqlite
 CREATE TABLE queue (sample_guid, run_uuid, status, elephantwalkurl, reference, distance, quality, epoch_added);
 CREATE TABLE complete (sample_guid, run_uuid, elephantwalkurl, reference, distance, quality, epoch_added, epoch_start, epoch_end, neighbours, tree);
 $ FLASK_APP=main.py flask run -h 0.0.0.0
