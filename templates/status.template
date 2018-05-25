@@ -1,94 +1,82 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  	<head>
     {% block head %}
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-    <title>arboreta status</title>
-    <style>
-      body {
-      font-size: 0.9em;
-      }
-      pre {
-      white-space: pre-wrap;
-      }
-    </style>
+    	<meta charset="utf-8">
+    	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+    	<link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
+			<title>getree status</title>
     {% endblock head %}
   </head>
   <body>
-    <div class="container">
-      {% block content %}
-      <h1>arboreta status</h1>
-
-      <div class="alert {% if daemon_alive %} alert-success {% else %} alert-danger {% endif %}">
-	{% if daemon_alive %}
-	Runner thread is alive.
-	{% else %}
-	Runner thread is dead.
-	This is an error resulting in new queued runs not being run.
-	Contact crookcs.it@ndm.ox.ac.uk for help.
-	{% endif %}
+	<div class="container">
+			<h1>Phylogeny Tree Builder</h1>
+  		<div class="alert {% if daemon_alive %} alert-success {% else %} alert-danger {% endif %}">
+				{% if daemon_alive %} The server is up running.
+	    	{% else %} The server stopped running. Contact crookcs.it@ndm.ox.ac.uk for help.
+				{% endif %}
       </div>
-
-      <h2>Running</h2>
-      <table class="table table-hover table-sm">
+			{% block content %}
+			<h3>New Tree</h3>
+      <form action="/new_run">
+				<div class="form-group row">
+					<label for="sampleguid" class="col-sm-2 col-form-label">Sample Guid</label>
+					<div class="col-sm-4">
+					<input type="text" class="form-control" id="sampleguid" name="guid" placeholder="Guid"></div>
+				</div>
+					<div class="form-group row">
+					<label for="reference" class="col-sm-2 col-form-label">Reference</label>
+					<div class="col-sm-4">
+					<input type="text" class="form-control" id="reference" name="reference" placeholder="default R00000039"></div>
+				</div>	<div class="form-group row">
+					<label for="distance" class="col-sm-2 col-form-label">Distance</label>
+					<div class="col-sm-4">
+					<input type="text" class="form-control" id="distance" name="distance" placeholder="default 20"></div>
+				</div>
+					<div class="form-group row">
+					<label for="quality" class="col-sm-2 col-form-label">Quality</label>
+					<div class="col-sm-4">
+					<input type="text" class="form-control" id="quality"  name="quality" placeholder=" default 0.80"></div>
+					<div class="col-sm-2"><input type="submit" class='btn btn-success' value="Build a Tree" id="submit_tree"></div>
+				</div>		
+      </form>
+	<h3>Tree Status</h3>
+  <table class="table table-hover table-sm" id="status_table">
 	<thead>
 	  <tr>
-	    <th scope="col">Sample GUID</th>
-	    <th scope="col">Reference</th>
-	    <th scope="col">Distance</th>
-	    <th scope="col">Quality</th>
+	    <th scope="col"><a href="#" >Status</a></th>
+			<th scope="col"><a href="#" >Sample GUID</a></th>
+	    <th scope="col"><a href="#" >Reference</a></th>
+	    <th scope="col"><a href="#" >Distance</a></th>
+	    <th scope="col"><a href="#" >Quality</a></th>
+			<th scope="col"><a href="#" >Duration</a></th>
+			<th scope="col"></th>
 	  </tr>
 	</thead>
-	<tbody>
-	  {% for run in running %}
+	{% for run in queued %}
 	  <tr>
+			<td scope="col">queued</td>
 	    <td scope="col">{{ run[0] }}</td>
 	    <td scope="col">{{ run[1] }}</td>
 	    <td scope="col">{{ run[2] }}</td>
 	    <td scope="col">{{ run[3] }}</td>
 	  </tr>
-	  {% endfor %}
-	</tbody>
-      </table>
-
-      <h2>Queued</h2>
-      <table class="table table-hover table-sm">
-	<thead>
+	{% endfor %}
+  {% for run in running %}
 	  <tr>
-	    <th scope="col">Sample GUID</th>
-	    <th scope="col">Reference</th>
-	    <th scope="col">Distance</th>
-	    <th scope="col">Quality</th>
-	  </tr>
-	</thead>
-	<tbody>
-	  {% for run in queued %}
-	  <tr>
+			<td scope="col">running</td>
 	    <td scope="col">{{ run[0] }}</td>
 	    <td scope="col">{{ run[1] }}</td>
 	    <td scope="col">{{ run[2] }}</td>
 	    <td scope="col">{{ run[3] }}</td>
+			<td scope="col"></td>
+			<td scope="col"></td>
 	  </tr>
-	  {% endfor %}
-	</tbody>
-      </table>
-      <h2>Completed</h2>
-      <table class="table table-hover table-sm">
-	<thead>
+	{% endfor %}
+	{% for run in completed %}
 	  <tr>
-	    <th scope="col">Sample GUID</th>
-	    <th scope="col">Reference</th>
-	    <th scope="col">Distance</th>
-	    <th scope="col">Quality</th>
-	    <th scope="col">Time taken</th>
-	    <th scope="col"></th>
-	  </tr>
-	</thead>
-	<tbody>
-	  {% for run in completed %}
-	  <tr>
+		  <td scope="col">completed</td>
 	    <td scope="col">{{ run[0] }}</td>
 	    <td scope="col">{{ run[1] }}</td>
 	    <td scope="col">{{ run[2] }}</td>
@@ -98,45 +86,20 @@
 	  </tr>
 	  {% endfor %}
 	</tbody>
-      </table>
-
-      <h2>Submit new run</h2>
-      <form action="/new_run">
-	<div class="input-group mb-3">
-	  <div class="input-group-prepend">
-	    <span class="input-group-text" id="basic-addon1">Sample GUID</span>
-	  </div>
-	  <input class='input-group-text' type="text" name="guid"><br/>
-	</div>
-	<div class="input-group mb-3">
-	  <div class="input-group-prepend">
-	    <span class="input-group-text" id="basic-addon1">Reference</span>
-	  </div>
-	  <input class='input-group-text' type="text" name="reference"><br/>
-	</div>
-	<div class="input-group mb-3">
-	  <div class="input-group-prepend">
-	    <span class="input-group-text" id="basic-addon1">Distance</span>
-	  </div>
-	  <input class='input-group-text' type="text" name="distance"><br/>
-	</div>
-	<div class="input-group mb-3">
-	  <div class="input-group-prepend">
-	    <span class="input-group-text" id="basic-addon1">Quality</span>
-	  </div>
-	  <input class='input-group-text' type="text" name="quality"><br/>
-	</div>
-	<input type="submit" class='btn btn-primary' value="Submit">
-      </form>
-	
-
-      {% endblock content %}
+  </table>
+  {% endblock content %}
       
-      {% block footer %}
-      <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-      {% endblock footer %}
+  {% block footer %}
+	<hr />
+        <footer>
+            <p>Developed by Denis and Fan &copy; 2018  - Modernising Medical Microbiology, Nuffield Department Medicine, University of Oxford</p>
+				</footer>
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+	<script type="text/javascript" src="{{ url_for('static', filename='app.js')}}"></script>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.30.4/js/jquery.tablesorter.js"></script>
+	{% endblock footer %}
   </body>
 </html>
 
