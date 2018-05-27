@@ -9,12 +9,49 @@ import yaml
 
 import lib
 
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, make_response
+
+from matplotlib.backends.backend_svg import FigureCanvasSVG as FigureCanvas
+from matplotlib.figure import Figure
+from matplotlib.ticker import MaxNLocator
+
+from io import StringIO
+
+from config import cfg
 
 con = sqlite3.connect('arboreta.sqlite', check_same_thread=False)
 db_lock = threading.Lock()
 
-from config import cfg
+def graph(guids, reference, quality, elephantwalkurl):
+    with db_lock, con:
+        all_neighbours = con.execute("select * from neighbours where samples = ? and reference = ? and quality = ? and elephantwalkurl = ? order by cast(distance as integer) asc",
+                                     (guids, reference, quality, elephantwalkurl)).fetchall()
+    return [(int(x[2]), len(json.loads(x[7]))) for x in all_neighbours]
+
+#
+# check if neighbours in database. query elephantwalk if not
+#
+# just returns guids argument if it is a list (contains a ,)
+#
+def neighbours(guids, reference, distance, quality, elephantwalkurl):
+    with db_lock, con:
+        neighbours = con.execute("select * from neighbours where samples = ? and reference = ? and distance = ? and quality = ? and elephantwalkurl = ?",
+                                 (guids, reference, distance, quality, elephantwalkurl)).fetchall()
+    if neighbours:
+        print("returning from db")
+        return json.loads(neighbours[0][7])
+    else:
+        if "," in guids:
+            print("sample is a list of guids: returning itself")
+            return [x.strip() for x in guids.split(",")]
+        else:
+            print("getting neighbours from elephantwalk")
+            neighbour_guids = lib.get_neighbours(guids, reference, distance, quality, elephantwalkurl)
+            with db_lock, con:
+                uid = uuid.uuid4()
+                n = con.execute("insert into neighbours values (?,?,?,?,?,?,?,?)",
+                                (str(uid),guids,distance,reference,quality,elephantwalkurl,str(int(time.time())),json.dumps(neighbour_guids)))
+            return neighbour_guids
 
 def demon_interface():
     #
@@ -34,7 +71,7 @@ def demon_interface():
     # get neighbours, make multifasta file and run iqtree
     #
     def go(guid, run_uuid, reference, distance, quality, elephantwalkurl, cores, iqtreepath):
-        neighbour_guids = lib.get_neighbours(guid, reference, distance, quality, elephantwalkurl)
+        neighbour_guids = neighbours(guid, reference, distance, quality, elephantwalkurl)
 
         old_dir = os.getcwd()
         run_dir = "data/" + run_uuid
@@ -142,11 +179,49 @@ def status():
 
 @app.route('/neighbours/<guid>')
 def get_neighbours(guid):
-    return get_run_index(guid, 9)
+    reference = request.args.get('reference')
+    if not reference: reference = cfg['default_reference']
+    distance = request.args.get('distance')
+    if not distance: distance = cfg['default_distance']
+    quality = request.args.get('quality')
+    if not quality: quality = cfg['default_quality']
+    return json.dumps(neighbours(guid, reference, distance, quality, cfg['elephantwalkurl']))
 
 @app.route('/tree/<guid>')
 def get_tree(guid):
     return get_run_index(guid, 10)
+
+@app.route('/ndgraph/<guid>')
+def get_graph(guid):
+    reference = request.args.get('reference')
+    if not reference: reference = cfg['default_reference']
+    quality = request.args.get('quality')
+    if not quality: quality = cfg['default_quality']
+    return json.dumps(graph(guid, reference, quality, cfg['elephantwalkurl']))
+
+@app.route('/ndgraph.png/<guid>')
+def get_graph_png(guid):
+    reference = request.args.get('reference')
+    if not reference: reference = cfg['default_reference']
+    quality = request.args.get('quality')
+    if not quality: quality = cfg['default_quality']
+    g = graph(guid, reference, quality, cfg['elephantwalkurl'])
+    print(g)
+    fig = Figure(figsize=(8,4.5), dpi=100)
+    fig.suptitle("Sample: {0}".format(guid))
+    ax = fig.add_subplot(111)
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    x = [p[0] for p in g]
+    y = [p[1] for p in g]
+    ax.plot(x, y, 'gx-', linewidth=1)
+    ax.set_xlabel("Distance")
+    ax.set_ylabel("Neighbours")
+    canvas = FigureCanvas(fig)
+    png_output = StringIO()
+    canvas.print_svg(png_output)
+    response = make_response(png_output.getvalue())
+    response.headers['Content-Type'] = 'image/svg+xml'
+    return response
 
 @app.route('/new_run')
 def new_run():
