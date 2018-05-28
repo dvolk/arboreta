@@ -24,9 +24,9 @@ db_lock = threading.Lock()
 
 def graph(guids, reference, quality, elephantwalkurl):
     with db_lock, con:
-        all_neighbours = con.execute("select * from neighbours where samples = ? and reference = ? and quality = ? and elephantwalkurl = ? order by cast(distance as integer) asc",
+        all_neighbours = con.execute("select distance,neighbours_count from neighbours where samples = ? and reference = ? and quality = ? and elephantwalkurl = ? order by distance asc",
                                      (guids, reference, quality, elephantwalkurl)).fetchall()
-    return [(int(x[2]), len(json.loads(x[7]))) for x in all_neighbours]
+    return [(x[0], x[1]) for x in all_neighbours]
 
 #
 # check if neighbours in database. query elephantwalk if not
@@ -36,7 +36,7 @@ def graph(guids, reference, quality, elephantwalkurl):
 def neighbours(guids, reference, distance, quality, elephantwalkurl):
     with db_lock, con:
         neighbours = con.execute("select * from neighbours where samples = ? and reference = ? and distance = ? and quality = ? and elephantwalkurl = ?",
-                                 (guids, reference, distance, quality, elephantwalkurl)).fetchall()
+                                 (guids, reference, int(distance), quality, elephantwalkurl)).fetchall()
     if neighbours:
         print("returning from db")
         return json.loads(neighbours[0][7])
@@ -49,8 +49,8 @@ def neighbours(guids, reference, distance, quality, elephantwalkurl):
             neighbour_guids = lib.get_neighbours(guids, reference, distance, quality, elephantwalkurl)
             with db_lock, con:
                 uid = uuid.uuid4()
-                n = con.execute("insert into neighbours values (?,?,?,?,?,?,?,?)",
-                                (str(uid),guids,distance,reference,quality,elephantwalkurl,str(int(time.time())),json.dumps(neighbour_guids)))
+                n = con.execute("insert into neighbours values (?,?,?,?,?,?,?,?,?)",
+                                (str(uid),guids,int(distance),reference,quality,elephantwalkurl,str(int(time.time())),json.dumps(neighbour_guids),len(neighbour_guids)))
             return neighbour_guids
 
 def demon_interface():
@@ -199,16 +199,16 @@ def get_graph(guid):
     if not quality: quality = cfg['default_quality']
     return json.dumps(graph(guid, reference, quality, cfg['elephantwalkurl']))
 
-@app.route('/ndgraph.png/<guid>')
-def get_graph_png(guid):
+@app.route('/ndgraph.svg/<guid>')
+def get_graph_svg(guid):
     reference = request.args.get('reference')
     if not reference: reference = cfg['default_reference']
     quality = request.args.get('quality')
     if not quality: quality = cfg['default_quality']
     g = graph(guid, reference, quality, cfg['elephantwalkurl'])
     print(g)
-    fig = Figure(figsize=(8,4.5), dpi=100)
-    fig.suptitle("Sample: {0}".format(guid))
+    fig = Figure(figsize=(12,7), dpi=100)
+    fig.suptitle("Sample: {0}, reference: {1}, quality: {2}, ew: {3}".format(guid,reference,quality, cfg['elephantwalkurl']))
     ax = fig.add_subplot(111)
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     x = [p[0] for p in g]

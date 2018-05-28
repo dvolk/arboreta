@@ -6,7 +6,7 @@
     	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
     	<link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
-			<title>getree status</title>
+			<title>Phylogeny Tree Builder</title>
     {% endblock head %}
   </head>
   <body>
@@ -82,7 +82,7 @@
 	    <td scope="col">{{ run[2] }}</td>
 	    <td scope="col">{{ run[3] }}</td>
 	    <td scope="col">{{ run[6] }}</td>
-	    <td scope="col"><a href="/tree/{{ run[0] }}?reference={{ run[1] }}&distance={{ run[2] }}&quality={{ run[3] }}">tree</a> / <a href="/neighbours/{{ run[0] }}?reference={{ run[1] }}&distance={{ run[2] }}&quality={{ run[3] }}">neighbours</a></td>
+	    <td scope="col"><a href="/tree/{{ run[0] }}?reference={{ run[1] }}&distance={{ run[2] }}&quality={{ run[3] }}">tree</a> / <a href="/neighbours/{{ run[0] }}?reference={{ run[1] }}&distance={{ run[2] }}&quality={{ run[3] }}">neighbours</a><a href="/ndgraph.svg/{{ run[0] }}?reference={{ run[1] }}&quality={{ run[3] }}">/ nd graph</a></td>
 	  </tr>
 	  {% endfor %}
 	</tbody>
