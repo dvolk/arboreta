@@ -1,105 +1,133 @@
 <!doctype html>
 <html lang="en">
-  	<head>
+  <head>
     {% block head %}
-    	<meta charset="utf-8">
-    	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
-    	<link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
-			<title>Phylogeny Tree Builder</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
+    <title>Phylogeny Tree Builder</title>
     {% endblock head %}
   </head>
   <body>
-	<div class="container">
-			<h1>Phylogeny Tree Builder</h1>
-  		<div class="alert {% if daemon_alive %} alert-success {% else %} alert-danger {% endif %}">
-				{% if daemon_alive %} The server is up running.
-	    	{% else %} The server stopped running. Contact crookcs.it@ndm.ox.ac.uk for help.
-				{% endif %}
+    <div class="container">
+      <h1>Phylogeny Tree Builder</h1>
+      <div class="alert {% if daemon_alive %} alert-success {% else %} alert-danger {% endif %}">
+	{% if daemon_alive %} The server is up running.
+	{% else %} The server stopped running. Contact crookcs.it@ndm.ox.ac.uk for help.
+	{% endif %}
       </div>
-			{% block content %}
-			<h3>New Tree</h3>
+      {% block content %}
+      <h3>New Tree</h3>
       <form action="/new_run">
-				<div class="form-group row">
-					<label for="sampleguid" class="col-sm-2 col-form-label">Sample Guid</label>
-					<div class="col-sm-4">
-					<input type="text" class="form-control" id="sampleguid" name="guid" placeholder="Guid"></div>
-				</div>
-					<div class="form-group row">
-					<label for="reference" class="col-sm-2 col-form-label">Reference</label>
-					<div class="col-sm-4">
-					<input type="text" class="form-control" id="reference" name="reference" placeholder="default R00000039"></div>
-				</div>	<div class="form-group row">
-					<label for="distance" class="col-sm-2 col-form-label">Distance</label>
-					<div class="col-sm-4">
-					<input type="text" class="form-control" id="distance" name="distance" placeholder="default 20"></div>
-				</div>
-					<div class="form-group row">
-					<label for="quality" class="col-sm-2 col-form-label">Quality</label>
-					<div class="col-sm-4">
-					<input type="text" class="form-control" id="quality"  name="quality" placeholder=" default 0.80"></div>
-					<div class="col-sm-2"><input type="submit" class='btn btn-success' value="Build a Tree" id="submit_tree"></div>
-				</div>		
+	<div class="form-group row">
+	  <label for="sampleguid" class="col-sm-2 col-form-label">Sample Guid</label>
+	  <div class="col-sm-4">
+	    <input type="text" class="form-control" id="sampleguid" name="guid" placeholder="Guid">
+	  </div>
+	</div>
+	<div class="form-group row">
+	  <label for="reference" class="col-sm-2 col-form-label">Reference</label>
+	  <div class="col-sm-4">
+	    <input type="text" class="form-control" id="reference" name="reference" placeholder="default R00000039">
+	  </div>
+	</div>
+	<div class="form-group row">
+	  <label for="distance" class="col-sm-2 col-form-label">Distance</label>
+	  <div class="col-sm-4">
+	    <input type="text" class="form-control" id="distance" name="distance" placeholder="default 20">
+	  </div>
+	</div>
+	<div class="form-group row">
+	  <label for="quality" class="col-sm-2 col-form-label">Quality</label>
+	  <div class="col-sm-4">
+	    <input type="text" class="form-control" id="quality"  name="quality" placeholder=" default 0.80">
+	  </div>
+	  <div class="col-sm-2">
+	    <input type="submit" class='btn btn-success' value="Build a Tree" id="submit_tree">
+	  </div>
+	</div>		
       </form>
-	<h3>Tree Status</h3>
-  <table class="table table-hover table-sm" id="status_table">
+      <h3>Tree Status</h3>
+      <table class="table table-hover table-sm" id="status_table">
 	<thead>
 	  <tr>
 	    <th scope="col"><a href="#" >Status</a></th>
-			<th scope="col"><a href="#" >Sample GUID</a></th>
+	    <th scope="col"><a href="#" >Sample GUID</a></th>
 	    <th scope="col"><a href="#" >Reference</a></th>
 	    <th scope="col"><a href="#" >Distance</a></th>
 	    <th scope="col"><a href="#" >Quality</a></th>
-			<th scope="col"><a href="#" >Duration</a></th>
-			<th scope="col"></th>
+	    <th scope="col"><a href="#" >Duration</a></th>
+	    <th scope="col"></th>
+	    <th scope="col"></th>
+	    <th scope="col"></th>
+	    <th scope="col"></th>
 	  </tr>
 	</thead>
-	{% for run in queued %}
+	<tbody>
+	  {% for run in queued %}
 	  <tr>
-			<td scope="col">queued</td>
+	    <td scope="col">queued</td>
 	    <td scope="col">{{ run[0] }}</td>
 	    <td scope="col">{{ run[1] }}</td>
 	    <td scope="col">{{ run[2] }}</td>
 	    <td scope="col">{{ run[3] }}</td>
+	    <td scope="col"><a href="/neighbours/{{ run[0] }}?reference={{ run[1] }}&distance={{ run[2] }}&quality={{ run[3] }}">neighbours</a></td>
+	    <td></td>
 	  </tr>
-	{% endfor %}
-  {% for run in running %}
+	  {% endfor %}
+	  {% for run in running %}
 	  <tr>
-			<td scope="col">running</td>
+	    <td scope="col">running</td>
 	    <td scope="col">{{ run[0] }}</td>
 	    <td scope="col">{{ run[1] }}</td>
 	    <td scope="col">{{ run[2] }}</td>
 	    <td scope="col">{{ run[3] }}</td>
-			<td scope="col"></td>
-			<td scope="col"></td>
+	    <td scope="col"></td>
+	    <td scope="col"><a href="/neighbours/{{ run[0] }}?reference={{ run[1] }}&distance={{ run[2] }}&quality={{ run[3] }}">neighbours</a></td>
+	    <td>
+	      <a href="/log/{{ run[0] }}?reference={{ run[1] }}&quality={{ run[3] }}">log</a>
+	    </td>
+	    <td></td>
+	    <td></td>
 	  </tr>
-	{% endfor %}
-	{% for run in completed %}
+	  {% endfor %}
+	  {% for run in completed %}
 	  <tr>
-		  <td scope="col">completed</td>
-	    <td scope="col">{{ run[0] }}</td>
+	    <td scope="col">completed</td>
+	    <td style="white-space: nowrap; text-overflow:ellipsis; overflow: hidden; max-width:1px;" scope="col">{{ run[0] }}</td>
 	    <td scope="col">{{ run[1] }}</td>
 	    <td scope="col">{{ run[2] }}</td>
 	    <td scope="col">{{ run[3] }}</td>
 	    <td scope="col">{{ run[6] }}</td>
-	    <td scope="col"><a href="/tree/{{ run[0] }}?reference={{ run[1] }}&distance={{ run[2] }}&quality={{ run[3] }}">tree</a> / <a href="/neighbours/{{ run[0] }}?reference={{ run[1] }}&distance={{ run[2] }}&quality={{ run[3] }}">neighbours</a><a href="/ndgraph.svg/{{ run[0] }}?reference={{ run[1] }}&quality={{ run[3] }}">/ nd graph</a></td>
+	    <td scope="col">
+	      <a href="/tree/{{ run[0] }}?reference={{ run[1] }}&distance={{ run[2] }}&quality={{ run[3] }}">tree</a>
+	    </td>
+	    <td scope="col">
+	      <a href="/neighbours/{{ run[0] }}?reference={{ run[1] }}&distance={{ run[2] }}&quality={{ run[3] }}">neighbours</a>
+	    </td>
+	    <td scope="col">
+	      <a href="/ndgraph.svg/{{ run[0] }}?reference={{ run[1] }}&quality={{ run[3] }}">nd graph</a>
+	    </td>
+	    <td>
+	      <a href="/log/{{ run[0] }}?reference={{ run[1] }}&quality={{ run[3] }}">log</a>
+	    </td>
 	  </tr>
 	  {% endfor %}
 	</tbody>
-  </table>
-  {% endblock content %}
-      
-  {% block footer %}
-	<hr />
-        <footer>
-            <p>Developed by Denis and Fan &copy; 2018  - Modernising Medical Microbiology, Nuffield Department Medicine, University of Oxford</p>
-				</footer>
-  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-	<script type="text/javascript" src="{{ url_for('static', filename='app.js')}}"></script>
-	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.30.4/js/jquery.tablesorter.js"></script>
-	{% endblock footer %}
+      </table>
+      {% endblock content %}
+
+      {% block footer %}
+      <hr />
+      <footer>
+	<p>Developed by Denis and Fan &copy; 2018  - Modernising Medical Microbiology, Nuffield Department Medicine, University of Oxford</p>
+      </footer>
+      <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+      <script type="text/javascript" src="{{ url_for('static', filename='app.js')}}"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.30.4/js/jquery.tablesorter.js"></script>
+      {% endblock footer %}
   </body>
 </html>
-
