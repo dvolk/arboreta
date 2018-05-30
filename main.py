@@ -1,4 +1,6 @@
 import os
+import sys
+import tempfile
 import uuid
 import json
 import sqlite3
@@ -22,6 +24,23 @@ from config import cfg
 con = sqlite3.connect('arboreta.sqlite', check_same_thread=False)
 db_lock = threading.Lock()
 
+class captured_output:
+    def __init__(self):
+        self.prevfd = None
+        self.prev = None
+
+    def __enter__(self):
+        F = tempfile.NamedTemporaryFile()
+        self.prevfd = os.dup(sys.stdout.fileno())
+        os.dup2(F.fileno(), sys.stdout.fileno())
+        self.prev = sys.stdout
+        sys.stdout = os.fdopen(self.prevfd, "w")
+        return F
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        os.dup2(self.prevfd, self.prev.fileno())
+        sys.stdout = self.prev
+
 def graph(guids, reference, quality, elephantwalkurl):
     with db_lock, con:
         all_neighbours = con.execute("select distance,neighbours_count from neighbours where samples = ? and reference = ? and quality = ? and elephantwalkurl = ? order by distance asc",
@@ -36,6 +55,28 @@ def graph2(guids, reference, quality, elephantwalkurl):
         all_neighbours = con.execute("select distance,neighbours_count from neighbours where samples = ? and reference = ? and quality = ? and elephantwalkurl = ? order by distance asc",
                                      (guids, reference, quality, elephantwalkurl)).fetchall()
     return ([x[0] for x in all_neighbours], [x[1] for x in all_neighbours])
+
+def graph3(guids, reference, quality, elephantwalkurl, threshhold):
+    running = True
+    ns = []
+    last = None
+    last_count = 0
+    distance = 0
+    ps = []
+    while running:
+        last = len(ns)
+        ns = neighbours(guids, reference, distance, quality, elephantwalkurl)
+        ps.append([distance, last])
+        distance = distance + 1
+        if len(ns) == last:
+            last_count = last_count + 1
+        else:
+            last_count = 0
+        if last_count > threshhold:
+            running = False
+        print(last_count)
+    return ([x[0] for x in ps], [x[1] for x in ps])
+
 
 #
 # check if neighbours in database. query elephantwalk if not
@@ -85,6 +126,7 @@ def demon_interface():
         old_dir = os.getcwd()
         run_dir = "data/" + run_uuid
 
+        print("makedirs")
         os.makedirs(run_dir, exist_ok=False)
         os.chdir(run_dir)
 
@@ -117,8 +159,11 @@ def demon_interface():
                 con.execute('update queue set status = "RUNNING" where sample_guid = ? and reference = ? and distance = ? and quality = ?',
                             (elem[0], elem[4], elem[5], elem[6]))
 
-            ret, neighbour_guids = go(elem[0], elem[1], elem[4], elem[5], elem[6], elem[3], cfg['iqtreecores'],
-                                      "../../contrib/iqtree-1.6.5-Linux/bin/iqtree")
+            with captured_output() as E:
+                ret, neighbour_guids = go(elem[0], elem[1], elem[4], elem[5], elem[6], elem[3], cfg['iqtreecores'],
+                                          "../../contrib/iqtree-1.6.5-Linux/bin/iqtree")
+            print(E.name)
+
             ended = str(int(time.time()))
             tree = _get_tree(elem[0], elem[4], elem[5], elem[6])
             with db_lock, con:
@@ -126,6 +171,7 @@ def demon_interface():
                             (elem[0], elem[4], elem[5], elem[6]))
                 con.execute('insert into complete values (?,?,?,?,?,?,?,?,?,?,?)',
                             (elem[0], elem[1], elem[3], elem[4], elem[5], elem[6], elem[7], started, ended, json.dumps(neighbour_guids), tree))
+
             print("done with {0}", elem)
 
         if int(time.time()) % 100 == 0: print("daemon idle")
@@ -216,24 +262,43 @@ def get_graph2(guid):
     if not quality: quality = cfg['default_quality']
     return json.dumps(graph2(guid, reference, quality, cfg['elephantwalkurl']))
 
+@app.route('/ndgraph3/<guid>')
+def get_graph3(guid):
+    reference = request.args.get('reference')
+    if not reference: reference = cfg['default_reference']
+    quality = request.args.get('quality')
+    if not quality: quality = cfg['default_quality']
+    threshhold = request.args.get('threshhold')
+    if not threshhold: threshhold = 4
+    return json.dumps(graph3(guid, reference, quality, cfg['elephantwalkurl'], int(threshhold)))
+
 @app.route('/ndgraph.svg/<guid>')
 def get_graph_svg(guid):
     reference = request.args.get('reference')
     if not reference: reference = cfg['default_reference']
     quality = request.args.get('quality')
     if not quality: quality = cfg['default_quality']
-    (xs,ys) = graph2(guid, reference, quality, cfg['elephantwalkurl'])
+    threshhold = request.args.get('threshhold')
+    if threshhold:
+        (xs,ys) = graph3(guid, reference, quality, cfg['elephantwalkurl'], int(threshhold))
+    else:
+        (xs,ys) = graph2(guid, reference, quality, cfg['elephantwalkurl'])
+    slopes = [0]
+    for n in range(len(xs)):
+        if n == 0: continue
+        slopes.append((ys[n] - ys[n-1])/(xs[n]-xs[n-1]))
     fig = Figure(figsize=(12,7), dpi=100)
     fig.suptitle("Sample: {0}, reference: {1}, quality: {2}, ew: {3}".format(guid,reference,quality, cfg['elephantwalkurl']))
     ax = fig.add_subplot(111)
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax.plot(xs, ys, 'gx-', linewidth=1)
+    ax.plot(xs, slopes, 'r-', linewidth=1)
     ax.set_xlabel("Distance")
     ax.set_ylabel("Neighbours")
     canvas = FigureCanvas(fig)
-    png_output = StringIO()
-    canvas.print_svg(png_output)
-    response = make_response(png_output.getvalue())
+    svg_output = StringIO()
+    canvas.print_svg(svg_output)
+    response = make_response(svg_output.getvalue())
     response.headers['Content-Type'] = 'image/svg+xml'
     return response
 
