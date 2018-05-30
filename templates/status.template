@@ -72,8 +72,15 @@
 	    <td scope="col">{{ run[1] }}</td>
 	    <td scope="col">{{ run[2] }}</td>
 	    <td scope="col">{{ run[3] }}</td>
-	    <td scope="col"><a href="/neighbours/{{ run[0] }}?reference={{ run[1] }}&distance={{ run[2] }}&quality={{ run[3] }}">neighbours</a></td>
 	    <td></td>
+	    <td></td>
+	    <td scope="col"><a href="/neighbours/{{ run[0] }}?reference={{ run[1] }}&distance={{ run[2] }}&quality={{ run[3] }}">neighbours</a></td>
+	    <td scope="col">
+	      <a href="/ndgraph.svg/{{ run[0] }}?reference={{ run[1] }}&quality={{ run[3] }}">nd graph</a>
+	    </td>
+	    <td scope="col">
+	      <a href="/log/{{ run[0] }}?reference={{ run[1] }}&quality={{ run[3] }}">log</a>
+	    </td>
 	  </tr>
 	  {% endfor %}
 	  {% for run in running %}
@@ -83,13 +90,16 @@
 	    <td scope="col">{{ run[1] }}</td>
 	    <td scope="col">{{ run[2] }}</td>
 	    <td scope="col">{{ run[3] }}</td>
-	    <td scope="col"></td>
-	    <td scope="col"><a href="/neighbours/{{ run[0] }}?reference={{ run[1] }}&distance={{ run[2] }}&quality={{ run[3] }}">neighbours</a></td>
+	    <td></td>
 	    <td>
+	    </td>
+	    <td scope="col"><a href="/neighbours/{{ run[0] }}?reference={{ run[1] }}&distance={{ run[2] }}&quality={{ run[3] }}">neighbours</a></td>
+	    <td scope="col">
+	      <a href="/ndgraph.svg/{{ run[0] }}?reference={{ run[1] }}&quality={{ run[3] }}">nd graph</a>
+	    </td>
+	    <td scope="col">
 	      <a href="/log/{{ run[0] }}?reference={{ run[1] }}&quality={{ run[3] }}">log</a>
 	    </td>
-	    <td></td>
-	    <td></td>
 	  </tr>
 	  {% endfor %}
 	  {% for run in completed %}
@@ -109,7 +119,7 @@
 	    <td scope="col">
 	      <a href="/ndgraph.svg/{{ run[0] }}?reference={{ run[1] }}&quality={{ run[3] }}">nd graph</a>
 	    </td>
-	    <td>
+	    <td scope="col">
 	      <a href="/log/{{ run[0] }}?reference={{ run[1] }}&quality={{ run[3] }}">log</a>
 	    </td>
 	  </tr>

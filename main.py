@@ -29,6 +29,15 @@ def graph(guids, reference, quality, elephantwalkurl):
     return [(x[0], x[1]) for x in all_neighbours]
 
 #
+# same as graph, different format
+#
+def graph2(guids, reference, quality, elephantwalkurl):
+    with db_lock, con:
+        all_neighbours = con.execute("select distance,neighbours_count from neighbours where samples = ? and reference = ? and quality = ? and elephantwalkurl = ? order by distance asc",
+                                     (guids, reference, quality, elephantwalkurl)).fetchall()
+    return ([x[0] for x in all_neighbours], [x[1] for x in all_neighbours])
+
+#
 # check if neighbours in database. query elephantwalk if not
 #
 # just returns guids argument if it is a list (contains a ,)
@@ -199,21 +208,26 @@ def get_graph(guid):
     if not quality: quality = cfg['default_quality']
     return json.dumps(graph(guid, reference, quality, cfg['elephantwalkurl']))
 
+@app.route('/ndgraph2/<guid>')
+def get_graph2(guid):
+    reference = request.args.get('reference')
+    if not reference: reference = cfg['default_reference']
+    quality = request.args.get('quality')
+    if not quality: quality = cfg['default_quality']
+    return json.dumps(graph2(guid, reference, quality, cfg['elephantwalkurl']))
+
 @app.route('/ndgraph.svg/<guid>')
 def get_graph_svg(guid):
     reference = request.args.get('reference')
     if not reference: reference = cfg['default_reference']
     quality = request.args.get('quality')
     if not quality: quality = cfg['default_quality']
-    g = graph(guid, reference, quality, cfg['elephantwalkurl'])
-    print(g)
+    (xs,ys) = graph2(guid, reference, quality, cfg['elephantwalkurl'])
     fig = Figure(figsize=(12,7), dpi=100)
     fig.suptitle("Sample: {0}, reference: {1}, quality: {2}, ew: {3}".format(guid,reference,quality, cfg['elephantwalkurl']))
     ax = fig.add_subplot(111)
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    x = [p[0] for p in g]
-    y = [p[1] for p in g]
-    ax.plot(x, y, 'gx-', linewidth=1)
+    ax.plot(xs, ys, 'gx-', linewidth=1)
     ax.set_xlabel("Distance")
     ax.set_ylabel("Neighbours")
     canvas = FigureCanvas(fig)
