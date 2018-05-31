@@ -64,3 +64,7 @@ get json array of complete runs
 ### `/lookup/<guid>`
 
 convert guid to sample name or vice versa
+
+### `/sync_sample_lookup_table`
+
+gets sample name,guid from cassandra and puts it in the cache table
