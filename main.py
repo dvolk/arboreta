@@ -137,6 +137,9 @@ def demon_interface():
         with open("settings.json", "w") as f:
             f.write(json.dumps(data))
 
+        if "," not in guid:
+            neighbour_guids.append(guid)
+
         lib.concat_fasta(neighbour_guids, reference, "merged_fasta")
 
         print("running iqtree")
