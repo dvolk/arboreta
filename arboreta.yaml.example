@@ -7,3 +7,5 @@ iqtreecores: "1"
 default_reference: "R00000039"
 default_distance: "20"
 default_quality: "0.80"
+
+sqlitedbfilepath: "./arboreta.sqlite"

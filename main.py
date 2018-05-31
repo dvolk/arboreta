@@ -21,7 +21,7 @@ from io import StringIO
 
 from config import cfg
 
-con = sqlite3.connect('arboreta.sqlite', check_same_thread=False)
+con = sqlite3.connect(cfg['sqlitedbfilepath'], check_same_thread=False)
 db_lock = threading.Lock()
 
 class captured_output:
