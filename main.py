@@ -56,7 +56,7 @@ def graph2(guids, reference, quality, elephantwalkurl):
                                      (guids, reference, quality, elephantwalkurl)).fetchall()
     return ([x[0] for x in all_neighbours], [x[1] for x in all_neighbours])
 
-def graph3(guids, reference, quality, elephantwalkurl, threshhold):
+def graph3(guids, reference, quality, elephantwalkurl, cutoff):
     running = True
     ns = []
     last = None
@@ -66,13 +66,13 @@ def graph3(guids, reference, quality, elephantwalkurl, threshhold):
     while running:
         last = len(ns)
         ns = neighbours(guids, reference, distance, quality, elephantwalkurl)
-        ps.append([distance, last])
+        ps.append([distance, len(ns)])
         distance = distance + 1
         if len(ns) == last:
             last_count = last_count + 1
         else:
             last_count = 0
-        if last_count > threshhold:
+        if last_count > cutoff:
             running = False
         print(last_count)
     return ([x[0] for x in ps], [x[1] for x in ps])
@@ -268,9 +268,9 @@ def get_graph3(guid):
     if not reference: reference = cfg['default_reference']
     quality = request.args.get('quality')
     if not quality: quality = cfg['default_quality']
-    threshhold = request.args.get('threshhold')
-    if not threshhold: threshhold = 4
-    return json.dumps(graph3(guid, reference, quality, cfg['elephantwalkurl'], int(threshhold)))
+    cutoff = request.args.get('cutoff')
+    if not cutoff: cutoff = 4
+    return json.dumps(graph3(guid, reference, quality, cfg['elephantwalkurl'], int(cutoff)))
 
 @app.route('/ndgraph.svg/<guid>')
 def get_graph_svg(guid):
@@ -278,9 +278,9 @@ def get_graph_svg(guid):
     if not reference: reference = cfg['default_reference']
     quality = request.args.get('quality')
     if not quality: quality = cfg['default_quality']
-    threshhold = request.args.get('threshhold')
-    if threshhold:
-        (xs,ys) = graph3(guid, reference, quality, cfg['elephantwalkurl'], int(threshhold))
+    cutoff = request.args.get('cutoff')
+    if cutoff:
+        (xs,ys) = graph3(guid, reference, quality, cfg['elephantwalkurl'], int(cutoff))
     else:
         (xs,ys) = graph2(guid, reference, quality, cfg['elephantwalkurl'])
     slopes = [0]

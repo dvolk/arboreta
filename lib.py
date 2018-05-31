@@ -28,7 +28,7 @@ def get_neighbours(guid, reference, distance, quality, elephantwalkurl):
         print("Error: elephantwalk returned 0 guids")
         exit(1)
     print("Found {0} guids".format(len(guids)))
-    print(guids)
+    #print(guids)
     return guids
 
 #
