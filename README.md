@@ -13,6 +13,7 @@ $ sqlite3 arboreta.sqlite
 CREATE TABLE queue (sample_guid, run_uuid, status, elephantwalkurl, reference, distance, quality, epoch_added);
 CREATE TABLE complete (sample_guid, run_uuid, elephantwalkurl, reference, distance, quality, epoch_added, epoch_start, epoch_end, neighbours, tree);
 CREATE TABLE neighbours (uuid primary key, samples, distance integer, reference, quality, elephantwalkurl, epoch_add, neighbours, neighbours_count integer);
+CREATE TABLE sample_lookup_table(guid, name);
 $ FLASK_APP=main.py flask run -h 0.0.0.0
 ```
 ## API
