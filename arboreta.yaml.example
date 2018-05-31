@@ -9,4 +9,11 @@ default_distance: "20"
 default_quality: "0.80"
 
 sqlitedbfilepath: "./arboreta.sqlite"
-cassandra_ip1: "192.168.7.90"
+
+cassandra_username: "cassandra"
+cassandra_password: "c4ss4ndr4"
+
+cassandra_ips:
+  - "192.168.7.90"
+  - "192.168.7.91"
+  - "192.168.7.92"

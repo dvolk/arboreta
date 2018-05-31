@@ -352,8 +352,8 @@ def sync_lookup_table():
     from cassandra.cluster import Cluster
     from cassandra.auth import PlainTextAuthProvider
 
-    cas_auth_provider = PlainTextAuthProvider(username='cassandra', password='c4ss4ndr4')
-    cas_cluster = Cluster([cfg['cassandra_ip1']], auth_provider=cas_auth_provider)
+    cas_auth_provider = PlainTextAuthProvider(username=cfg['cassandra_username'], password=cfg['cassandra_password'])
+    cas_cluster = Cluster(cfg['cassandra_ips'], auth_provider=cas_auth_provider)
     cas_session = cas_cluster.connect('nosql_schema')
 
     rows = cas_session.execute('select name,id from sample')
