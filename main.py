@@ -358,6 +358,7 @@ def lookup(name):
 def sync_lookup_table():
     rows = cas_session.execute('select name,id from sample')
     with db_lock, con:
+        con.execute('delete from sample_lookup_table')
         for row in rows:
             con.execute('insert into sample_lookup_table values (?, ?)', (str(row.id), row.name))
 
