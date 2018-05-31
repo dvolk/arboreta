@@ -27,21 +27,21 @@ human-readable status page
 
 return json array of neighbours from database or add to run queue if not in database
 
-### `/nd_graph/<guid>?reference=R00000039&quality=0.80`
+### `/ndgraph/<guid>?reference=R00000039&quality=0.80`
 
 return json array of pairs of (distance,neighbours)
 
-### `/nd_graph2/<guid>?reference=R00000039&quality=0.80`
+### `/ndgraph2/<guid>?reference=R00000039&quality=0.80`
 
 return json array of two arrays - distances and neighbours
 
-### `/nd_graph3/<guid>?reference=R00000039&quality=0.80&cutoff=4`
+### `/ndgraph3/<guid>?reference=R00000039&quality=0.80&cutoff=4`
 
 return json array of two arrays - distances and neighbours
 
 keeps getting neighbours until `cutoff` of distances have the same number of neighbours
 
-### `/nd_graph.svg/<guid>?reference=R00000039&quality=0.80&cutoff=(no default)`
+### `/ndgraph.svg/<guid>?reference=R00000039&quality=0.80&cutoff=(no default)`
 
 return svg plot of distance-neighbours points
 
