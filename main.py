@@ -72,7 +72,7 @@ def graph3(guids, reference, quality, elephantwalkurl, cutoff):
             last_count = last_count + 1
         else:
             last_count = 0
-        if last_count > cutoff:
+        if last_count >= cutoff - 1:
             running = False
         print(last_count)
     return ([x[0] for x in ps], [x[1] for x in ps])
