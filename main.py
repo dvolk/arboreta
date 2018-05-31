@@ -11,7 +11,7 @@ import yaml
 
 import lib
 
-from flask import Flask, request, render_template, make_response
+from flask import Flask, request, render_template, make_response, redirect
 
 from matplotlib.backends.backend_svg import FigureCanvasSVG as FigureCanvas
 from matplotlib.figure import Figure
@@ -217,6 +217,10 @@ def get_run_index(guid, n):
                         (guid, run_uuid, "queued", cfg['elephantwalkurl'], reference, distance, quality, str(int(time.time()))))
         return "run added to queue\n"
 
+
+@app.route('/')
+def root_page():
+    return redirect('/status')
 
 #
 # flask routes
