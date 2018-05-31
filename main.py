@@ -333,8 +333,14 @@ def get_complete():
         completed = con.execute('select sample_guid, reference, distance, quality from complete').fetchall()
     return json.dumps(completed)
 
-@app.route('/sample_name/<guid>')
-def sample_name(guid):
-    guid = uuid.UUID(guid)
-    rows = cas_session.execute('select name from sample where id = %s', (guid,))
-    return json.dumps(rows[0].name)
+@app.route('/lookup/<name>')
+def lookup(name):
+    try:
+        guid = uuid.UUID(name)
+        rows = cas_session.execute('select name from sample where id = %s', (guid,))
+        return json.dumps(rows[0].name)
+    except:
+        rows = cas_session.execute('select name,id from sample')
+        for row in rows:
+            if row.name == name:
+                return json.dumps(str(row.id))

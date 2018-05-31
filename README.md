@@ -61,6 +61,6 @@ get json array of queue
 
 get json array of complete runs
 
-### `/sample_name/<guid>`
+### `/lookup/<guid>`
 
-get sample name from cassandra database (table sample, columns id,name)
+convert guid to sample name or vice versa
