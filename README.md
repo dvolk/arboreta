@@ -60,3 +60,7 @@ get json array of queue
 ### `/complete`
 
 get json array of complete runs
+
+### `/sample_name/<guid>`
+
+get sample name from cassandra database (table sample, columns id,name)
