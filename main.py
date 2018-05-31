@@ -19,17 +19,10 @@ from matplotlib.ticker import MaxNLocator
 
 from io import StringIO
 
-from cassandra.cluster import Cluster
-from cassandra.auth import PlainTextAuthProvider
-
 from config import cfg
 
 con = sqlite3.connect(cfg['sqlitedbfilepath'], check_same_thread=False)
 db_lock = threading.Lock()
-
-cas_auth_provider = PlainTextAuthProvider(username='cassandra', password='c4ss4ndr4')
-cas_cluster = Cluster([cfg['cassandra_ip1']], auth_provider=cas_auth_provider)
-cas_session = cas_cluster.connect('nosql_schema')
 
 class captured_output:
     def __init__(self):
@@ -356,10 +349,18 @@ def lookup(name):
 
 @app.route('/sync_sample_lookup_table')
 def sync_lookup_table():
+    from cassandra.cluster import Cluster
+    from cassandra.auth import PlainTextAuthProvider
+
+    cas_auth_provider = PlainTextAuthProvider(username='cassandra', password='c4ss4ndr4')
+    cas_cluster = Cluster([cfg['cassandra_ip1']], auth_provider=cas_auth_provider)
+    cas_session = cas_cluster.connect('nosql_schema')
+
     rows = cas_session.execute('select name,id from sample')
     with db_lock, con:
         con.execute('delete from sample_lookup_table')
         for row in rows:
             con.execute('insert into sample_lookup_table values (?, ?)', (str(row.id), row.name))
 
+    cas_cluster.shutdown()
     return redirect('/')
