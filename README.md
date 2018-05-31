@@ -3,7 +3,7 @@
 ## Install
 
 ```
-$ sudo apt install python3-dateutil python3-yaml python3-matplotlib
+$ sudo apt install python3-dateutil python3-yaml python3-matplotlib python3-cassandra
 $ pip install flask
 $ git clone http://github.com/dvolk/arboreta
 $ cd arboreta
