@@ -11,7 +11,7 @@ import yaml
 
 import lib
 
-from flask import Flask, request, render_template, make_response, redirect
+from flask import Flask, request, render_template, make_response, redirect, abort
 
 from matplotlib.backends.backend_svg import FigureCanvasSVG as FigureCanvas
 from matplotlib.figure import Figure
@@ -169,10 +169,10 @@ def demon_interface():
                 con.execute('update queue set status = "RUNNING" where sample_guid = ? and reference = ? and distance = ? and quality = ?',
                             (elem[0], elem[4], elem[5], elem[6]))
 
-            with captured_output() as E:
-                ret, neighbour_guids = go(elem[0], elem[1], elem[4], elem[5], elem[6], elem[3], cfg['iqtreecores'],
-                                          "../../contrib/iqtree-1.6.5-Linux/bin/iqtree")
-            print(E.name)
+            # with captured_output() as E:
+            ret, neighbour_guids = go(elem[0], elem[1], elem[4], elem[5], elem[6], elem[3], cfg['iqtreecores'],
+                                      "../../contrib/iqtree-1.6.5-Linux/bin/iqtree")
+            # print(E.name)
 
             ended = str(int(time.time()))
             tree = _get_tree(elem[0], elem[4], elem[5], elem[6])
@@ -298,6 +298,7 @@ def get_graph_svg(guid):
     else:
         (xs,ys) = graph2(guid, reference, quality, cfg['elephantwalkurl'])
     slopes = [0]
+    print(xs)
     for n in range(len(xs)):
         if n == 0: continue
         slopes.append((ys[n] - ys[n-1])/(xs[n]-xs[n-1]))
@@ -337,10 +338,27 @@ def get_complete():
 def lookup(name):
     try:
         guid = uuid.UUID(name)
-        rows = cas_session.execute('select name from sample where id = %s', (guid,))
-        return json.dumps(rows[0].name)
+        print("{0} looks like a uuid to me".format(name))
     except:
-        rows = cas_session.execute('select name,id from sample')
+        guid = None
+        print("{0} doesn't look like a uuid to me".format(name))
+
+    with db_lock, con:
+        if guid:
+            rows = con.execute('select name from sample_lookup_table where guid = ?', (name,)).fetchall()
+        else:
+            rows = con.execute('select guid from sample_lookup_table where name = ?', (name,)).fetchall()
+    print(rows)
+    if rows:
+        return json.dumps(rows[0][0])
+    else:
+        abort(404)
+
+@app.route('/sync_sample_lookup_table')
+def sync_lookup_table():
+    rows = cas_session.execute('select name,id from sample')
+    with db_lock, con:
         for row in rows:
-            if row.name == name:
-                return json.dumps(str(row.id))
+            con.execute('insert into sample_lookup_table values (?, ?)', (str(row.id), row.name))
+
+    return redirect('/')
