@@ -19,10 +19,17 @@ from matplotlib.ticker import MaxNLocator
 
 from io import StringIO
 
+from cassandra.cluster import Cluster
+from cassandra.auth import PlainTextAuthProvider
+
 from config import cfg
 
 con = sqlite3.connect(cfg['sqlitedbfilepath'], check_same_thread=False)
 db_lock = threading.Lock()
+
+cas_auth_provider = PlainTextAuthProvider(username='cassandra', password='c4ss4ndr4')
+cas_cluster = Cluster([cfg['cassandra_ip1']], auth_provider=cas_auth_provider)
+cas_session = cas_cluster.connect('nosql_schema')
 
 class captured_output:
     def __init__(self):
@@ -325,3 +332,9 @@ def get_complete():
     with db_lock, con:
         completed = con.execute('select sample_guid, reference, distance, quality from complete').fetchall()
     return json.dumps(completed)
+
+@app.route('/sample_name/<guid>')
+def sample_name(guid):
+    guid = uuid.UUID(guid)
+    rows = cas_session.execute('select name from sample where id = %s', (guid,))
+    return json.dumps(rows[0].name)
