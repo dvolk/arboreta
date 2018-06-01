@@ -338,12 +338,12 @@ def lookup(name):
 
     with db_lock, con:
         if guid:
-            rows = con.execute('select name from sample_lookup_table where guid = ?', (name,)).fetchall()
+            rows = con.execute('select guid,name from sample_lookup_table where guid = ?', (name,)).fetchall()
         else:
-            rows = con.execute('select guid from sample_lookup_table where name = ?', (name,)).fetchall()
+            rows = con.execute("select name,guid from sample_lookup_table where name like ?", ("%"+name+"%",)).fetchall()
     print(rows)
     if rows:
-        return json.dumps(rows[0][0])
+        return json.dumps(rows)
     else:
         abort(404)
 
