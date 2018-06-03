@@ -340,7 +340,7 @@ def lookup(name):
         if guid:
             rows = con.execute('select guid,name from sample_lookup_table where guid = ?', (name,)).fetchall()
         else:
-            rows = con.execute("select name,guid from sample_lookup_table where name like ?", ("%"+name+"%",)).fetchall()
+            rows = con.execute("select guid,name from sample_lookup_table where upper(name) like ?", (name+"%",)).fetchall()
     print(rows)
     if rows:
         return json.dumps(rows)
