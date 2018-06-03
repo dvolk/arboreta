@@ -117,6 +117,17 @@ def demon_interface():
         tree = open("data/{0}/merged_fasta.treefile".format(elem[0][1])).read()
         return tree
 
+    def get_names(guids):
+        names = []
+        with db_lock, con:
+            # CREATE TABLE sample_lookup_table(guid, name);
+            for guid in guids:
+                name = con.execute("select name from sample_lookup_table where guid = ?", (guid,)).fetchall()
+                if not name:
+                    print("guid {0} has no name".format(guid))
+                names.append(name[0][0])
+        return names
+
     #
     # get neighbours, make multifasta file and run iqtree
     #
@@ -140,7 +151,9 @@ def demon_interface():
         if "," not in guid:
             neighbour_guids.append(guid)
 
-        lib.concat_fasta(neighbour_guids, reference, "merged_fasta")
+        names = get_names(neighbour_guids)
+
+        lib.concat_fasta(neighbour_guids, names, reference, "merged_fasta")
 
         print("running iqtree")
         ret = os.system("{0} -s merged_fasta -nt {1}".format(iqtreepath, cores))

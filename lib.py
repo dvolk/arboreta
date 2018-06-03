@@ -34,9 +34,11 @@ def get_neighbours(guid, reference, distance, quality, elephantwalkurl):
 #
 # merge fasta files from guids into a multifasta file
 #
-def concat_fasta(guids, reference, out_file):
+def concat_fasta(guids, names, reference, out_file):
     with open(out_file, "w") as out:
-        for guid in guids:
+        for n in range(len(guids)):
+            guid = guids[n]
+            name = names[n]
             print(guid)
             pattern = cfg['pattern'].format(guid, reference)
             files = glob.glob(pattern)
@@ -50,6 +52,6 @@ def concat_fasta(guids, reference, out_file):
             fasta_gzip = open(files[0], mode="rb").read()
             fasta = "".join(gzip.decompress(fasta_gzip).decode('ascii').split('\n')[1:])
 
-            out.write(">{0}\n".format(guid))
+            out.write(">{0}_{1}\n".format(name, guid))
             out.write("{0}\n".format(fasta))
 
