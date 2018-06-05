@@ -124,8 +124,10 @@ def demon_interface():
             for guid in guids:
                 name = con.execute("select name from sample_lookup_table where guid = ?", (guid,)).fetchall()
                 if not name:
-                    print("guid {0} has no name".format(guid))
-                names.append(name[0][0])
+                    print("WARNING: guid {0} has no name".format(guid))
+                    names.append("NA")
+                else:
+                    names.append(name[0][0])
         return names
 
     #
