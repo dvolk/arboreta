@@ -24,6 +24,9 @@ from config import cfg
 con = sqlite3.connect(cfg['sqlitedbfilepath'], check_same_thread=False)
 db_lock = threading.Lock()
 
+with db_lock, con:
+    con.execute("delete from queue")
+
 class captured_output:
     def __init__(self):
         self.prevfd = None
