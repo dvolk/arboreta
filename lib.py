@@ -25,8 +25,8 @@ def get_neighbours(guid, reference, distance, quality, elephantwalkurl):
     for entry in walkjson:
         guids.append(entry[0])
     if not guids:
-        print("Error: elephantwalk returned 0 guids")
-        exit(1)
+        print("Warning: elephantwalk returned 0 guids")
+        return []
     print("Found {0} guids".format(len(guids)))
     #print(guids)
     return guids
