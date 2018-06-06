@@ -90,21 +90,20 @@ def neighbours(guids, reference, distance, quality, elephantwalkurl):
     with db_lock, con:
         neighbours = con.execute("select * from neighbours where samples = ? and reference = ? and distance = ? and quality = ? and elephantwalkurl = ?",
                                  (guids, reference, int(distance), quality, elephantwalkurl)).fetchall()
-    if neighbours:
-        print("returning from db")
-        return json.loads(neighbours[0][7])
-    else:
-        if "," in guids:
-            print("sample is a list of guids: returning itself")
-            return [x.strip() for x in guids.split(",")]
+        if neighbours:
+            print("returning from db")
+            return json.loads(neighbours[0][7])
         else:
-            print("getting neighbours from elephantwalk")
-            neighbour_guids = lib.get_neighbours(guids, reference, distance, quality, elephantwalkurl)
-            with db_lock, con:
+            if "," in guids:
+                print("sample is a list of guids: returning itself")
+                return [x.strip() for x in guids.split(",")]
+            else:
+                print("getting neighbours from elephantwalk")
+                neighbour_guids = lib.get_neighbours(guids, reference, distance, quality, elephantwalkurl)
                 uid = uuid.uuid4()
                 n = con.execute("insert into neighbours values (?,?,?,?,?,?,?,?,?)",
                                 (str(uid),guids,int(distance),reference,quality,elephantwalkurl,str(int(time.time())),json.dumps(neighbour_guids),len(neighbour_guids)))
-            return neighbour_guids
+                return neighbour_guids
 
 def demon_interface():
     #
