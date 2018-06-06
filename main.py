@@ -307,7 +307,10 @@ def get_graph_svg(guid):
         (xs,ys) = graph3(guid, reference, quality, cfg['elephantwalkurl'], int(cutoff))
     else:
         (xs,ys) = graph2(guid, reference, quality, cfg['elephantwalkurl'])
-    slopes = [0]
+    if len(ys) == 0:
+        slopes = []
+    else:
+        slopes = [0]
     print(xs)
     for n in range(len(xs)):
         if n == 0: continue
