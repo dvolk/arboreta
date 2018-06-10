@@ -294,7 +294,7 @@ def get_graph3(guid):
     if not quality: quality = cfg['default_quality']
     cutoff = request.args.get('cutoff')
     if not cutoff: cutoff = 4
-    if cutoff and cutoff > 10:
+    if cutoff and int(cutoff) > 10:
         cutoff = 10
     return json.dumps(graph3(guid, reference, quality, cfg['elephantwalkurl'], int(cutoff)))
 
@@ -305,7 +305,7 @@ def get_graph_svg(guid):
     quality = request.args.get('quality')
     if not quality: quality = cfg['default_quality']
     cutoff = request.args.get('cutoff')
-    if cutoff and cutoff > 10:
+    if cutoff and int(cutoff) > 10:
         cutoff = 10
     if cutoff:
         (xs,ys) = graph3(guid, reference, quality, cfg['elephantwalkurl'], int(cutoff))
