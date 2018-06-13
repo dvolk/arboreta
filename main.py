@@ -348,7 +348,7 @@ def get_queue():
 @app.route('/complete')
 def get_complete():
     with db_lock, con:
-        completed = con.execute('select sample_guid, reference, distance, quality, "DONE", epoch_added, epoch_start, epoch_start from complete').fetchall()
+        completed = con.execute('select sample_guid, reference, distance, quality, "DONE", epoch_added, epoch_start, epoch_end from complete').fetchall()
     return json.dumps(completed)
 
 @app.route('/lookup/<name>')
