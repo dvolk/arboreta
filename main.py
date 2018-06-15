@@ -342,14 +342,30 @@ def new_run():
 @app.route('/queue')
 def get_queue():
     with db_lock, con:
+        ret = []
         queued = con.execute('select sample_guid, reference, distance, quality, status, epoch_added, "", "" from queue').fetchall()
-    return json.dumps(queued)
+        for row in queued:
+            neighbours_count = con.execute('select neighbours_count from neighbours where samples = ? and reference = ? and distance = ? and quality = ?',
+                                           (row[0], row[1], row[2], row[3])).fetchall()
+            count = -1
+            if len(neighbours_count) > 0:
+                count = neighbours_count[0][0]
+            ret.append(list(row) + [count])
+    return json.dumps(ret)
 
 @app.route('/complete')
 def get_complete():
     with db_lock, con:
+        ret = []
         completed = con.execute('select sample_guid, reference, distance, quality, "DONE", epoch_added, epoch_start, epoch_end from complete').fetchall()
-    return json.dumps(completed)
+        for row in completed:
+            neighbours_count = con.execute('select neighbours_count from neighbours where samples = ? and reference = ? and distance = ? and quality = ?',
+                                           (row[0], row[1], row[2], row[3])).fetchall()
+            count = -1
+            if len(neighbours_count) > 0:
+                count = neighbours_count[0][0]
+            ret.append(list(row) + [count])
+    return json.dumps(ret)
 
 @app.route('/lookup/<name>')
 def lookup(name):
