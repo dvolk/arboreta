@@ -136,7 +136,8 @@ def demon_interface():
     # get neighbours, make multifasta file and run iqtree
     #
     def go(guid, run_uuid, reference, distance, quality, elephantwalkurl, cores, iqtreepath):
-        neighbour_guids = neighbours(guid, reference, distance, quality, elephantwalkurl)
+        # get neighbours without distances
+        neighbour_guids = [x[0] for x in neighbours(guid, reference, distance, quality, elephantwalkurl)]
 
         old_dir = os.getcwd()
         run_dir = "data/" + run_uuid
@@ -256,8 +257,20 @@ def status():
         run.append(lib.hms_timediff(run[5], run[4]))
     return render_template('status.template', running=running, queued=queued, completed=completed, daemon_alive=daemon_alive)
 
+# just guids
 @app.route('/neighbours/<guid>')
 def get_neighbours(guid):
+    reference = request.args.get('reference')
+    if not reference: reference = cfg['default_reference']
+    distance = request.args.get('distance')
+    if not distance: distance = cfg['default_distance']
+    quality = request.args.get('quality')
+    if not quality: quality = cfg['default_quality']
+    return json.dumps([x[0] for x in neighbours(guid, reference, distance, quality, cfg['elephantwalkurl'])])
+
+# guids + distances
+@app.route('/neighbours2/<guid>')
+def get_neighbours2(guid):
     reference = request.args.get('reference')
     if not reference: reference = cfg['default_reference']
     distance = request.args.get('distance')
