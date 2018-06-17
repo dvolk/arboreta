@@ -402,7 +402,7 @@ def lookup(names):
             ret.append(rows)
         else:
             ret.append([])
-    return json.dumps(ret)
+    return json.dumps([item for sublist in ret for item in sublist])
 
 @app.route('/sync_sample_lookup_table')
 def sync_lookup_table():
