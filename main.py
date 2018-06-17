@@ -96,7 +96,7 @@ def neighbours(guids, reference, distance, quality, elephantwalkurl):
         else:
             if "," in guids:
                 print("sample is a list of guids: returning itself")
-                return [x.strip() for x in guids.split(",")]
+                return [[x.strip(), ''] for x in guids.split(",")]
             else:
                 print("getting neighbours from elephantwalk")
                 neighbour_guids = lib.get_neighbours(guids, reference, distance, quality, elephantwalkurl)
