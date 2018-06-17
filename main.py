@@ -380,25 +380,29 @@ def get_complete():
             ret.append(list(row) + [count])
     return json.dumps(ret)
 
-@app.route('/lookup/<name>')
-def lookup(name):
-    try:
-        guid = uuid.UUID(name)
-        print("{0} looks like a uuid to me".format(name))
-    except:
-        guid = None
-        print("{0} doesn't look like a uuid to me".format(name))
+@app.route('/lookup/<names>')
+def lookup(names):
+    ret = []
+    names = [x.strip() for x in names.split(',')]
+    for name in names:
+        try:
+            guid = uuid.UUID(name)
+            print("{0} looks like a uuid to me".format(name))
+        except:
+            guid = None
+            print("{0} doesn't look like a uuid to me".format(name))
 
-    with db_lock, con:
-        if guid:
-            rows = con.execute('select guid,name from sample_lookup_table where guid = ?', (name,)).fetchall()
+        with db_lock, con:
+            if guid:
+                rows = con.execute('select guid,name from sample_lookup_table where guid = ?', (name,)).fetchall()
+            else:
+                rows = con.execute("select guid,name from sample_lookup_table where upper(name) like ?", (name+"%",)).fetchall()
+        print(rows)
+        if rows:
+            ret.append(rows)
         else:
-            rows = con.execute("select guid,name from sample_lookup_table where upper(name) like ?", (name+"%",)).fetchall()
-    print(rows)
-    if rows:
-        return json.dumps(rows)
-    else:
-        abort(404)
+            ret.append([])
+    return json.dumps(ret)
 
 @app.route('/sync_sample_lookup_table')
 def sync_lookup_table():
