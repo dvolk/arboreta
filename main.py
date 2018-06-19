@@ -161,7 +161,7 @@ def demon_interface():
         lib.concat_fasta(neighbour_guids, names, reference, "merged_fasta")
 
         print("running iqtree")
-        ret = os.system("{0} -s merged_fasta -nt {1}".format(iqtreepath, cores))
+        ret = os.system("{0} -s merged_fasta -st DNA -m GTR+I -blmin 0.00000001 -nt {1}".format(iqtreepath, cores))
         os.chdir(old_dir)
         return (ret, neighbour_guids)
 
