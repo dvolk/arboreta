@@ -232,7 +232,7 @@ def get_run_index(guid, n):
         run_uuid = str(uuid.uuid4())
         with db_lock, con:
             con.execute('insert into queue values (?,?,?,?,?,?,?,?,?)',
-                        (guid, run_uuid, "queued", cfg['elephantwalkurl'], reference, distance, quality, str(int(time.time())), '-'))
+                        (guid, run_uuid, "queued", cfg['elephantwalkurl'], reference, distance, quality, str(int(time.time())), ''))
         return "run added to queue\n"
 
 
