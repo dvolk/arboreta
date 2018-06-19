@@ -177,8 +177,8 @@ def demon_interface():
             print("starting {0}", elem)
             started = str(int(time.time()))
             with db_lock, con:
-                con.execute('update queue set status = "RUNNING" where sample_guid = ? and reference = ? and distance = ? and quality = ?',
-                            (elem[0], elem[4], elem[5], elem[6]))
+                con.execute('update queue set status = "RUNNING", epoch_start = ? where sample_guid = ? and reference = ? and distance = ? and quality = ?',
+                            (started, elem[0], elem[4], elem[5], elem[6]))
 
             # with captured_output() as E:
             ret, neighbour_guids = go(elem[0], elem[1], elem[4], elem[5], elem[6], elem[3], cfg['iqtreecores'],
@@ -231,8 +231,8 @@ def get_run_index(guid, n):
     else:
         run_uuid = str(uuid.uuid4())
         with db_lock, con:
-            con.execute('insert into queue values (?,?,?,?,?,?,?,?)',
-                        (guid, run_uuid, "queued", cfg['elephantwalkurl'], reference, distance, quality, str(int(time.time()))))
+            con.execute('insert into queue values (?,?,?,?,?,?,?,?,?)',
+                        (guid, run_uuid, "queued", cfg['elephantwalkurl'], reference, distance, quality, str(int(time.time())), '-'))
         return "run added to queue\n"
 
 
@@ -356,7 +356,7 @@ def new_run():
 def get_queue():
     with db_lock, con:
         ret = []
-        queued = con.execute('select sample_guid, reference, distance, quality, status, epoch_added, "", "" from queue').fetchall()
+        queued = con.execute('select sample_guid, reference, distance, quality, status, epoch_added, epoch_start, "" from queue').fetchall()
         for row in queued:
             neighbours_count = con.execute('select neighbours_count from neighbours where samples = ? and reference = ? and distance = ? and quality = ?',
                                            (row[0], row[1], row[2], row[3])).fetchall()

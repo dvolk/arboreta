@@ -10,7 +10,7 @@ $ cd arboreta
 $ cp arboreta.yaml.example arboreta.yaml
 edit arboreta.yaml
 $ sqlite3 arboreta.sqlite
-CREATE TABLE queue (sample_guid, run_uuid, status, elephantwalkurl, reference, distance, quality, epoch_added);
+CREATE TABLE queue (sample_guid, run_uuid, status, elephantwalkurl, reference, distance, quality, epoch_added, epoch_start);
 CREATE TABLE complete (sample_guid, run_uuid, elephantwalkurl, reference, distance, quality, epoch_added, epoch_start, epoch_end, neighbours, tree);
 CREATE TABLE neighbours (uuid primary key, samples, distance integer, reference, quality, elephantwalkurl, epoch_add, neighbours, neighbours_count integer);
 CREATE TABLE sample_lookup_table(guid, name);
