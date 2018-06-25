@@ -8,6 +8,7 @@ import subprocess
 import threading
 import time
 import yaml
+import functools
 
 import lib
 
@@ -380,23 +381,30 @@ def get_complete():
             ret.append(list(row) + [count])
     return json.dumps(ret)
 
+@functools.lru_cache(maxsize=None)
+def do_lookup(name, is_guid):
+    with db_lock, con:
+        if is_guid:
+            rows = con.execute('select guid,name from sample_lookup_table where guid = ?', (name,)).fetchall()
+        else:
+            rows = con.execute("select guid,name from sample_lookup_table where upper(name) like ?", (name+"%",)).fetchall()
+    return rows
+
 @app.route('/lookup/<names>')
 def lookup(names):
     ret = []
+    names = names.replace("[", "")
+    names = names.replace("]", "")
+    names = names.replace('"', "")
+    names = names.replace(" ", "")
     names = [x.strip() for x in names.split(',')]
     for name in names:
         try:
             guid = uuid.UUID(name)
-            print("{0} looks like a uuid to me".format(name))
         except:
             guid = None
-            print("{0} doesn't look like a uuid to me".format(name))
 
-        with db_lock, con:
-            if guid:
-                rows = con.execute('select guid,name from sample_lookup_table where guid = ?', (name,)).fetchall()
-            else:
-                rows = con.execute("select guid,name from sample_lookup_table where upper(name) like ?", (name+"%",)).fetchall()
+        rows = do_lookup(name, guid)
         print(rows)
         if rows:
             ret.append(rows)
@@ -418,6 +426,8 @@ def sync_lookup_table():
         con.execute('delete from sample_lookup_table')
         for row in rows:
             con.execute('insert into sample_lookup_table values (?, ?)', (str(row.id), row.name))
+
+    name.cache_clear()
 
     cas_cluster.shutdown()
     return redirect('/')
