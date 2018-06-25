@@ -20,17 +20,13 @@ def get_neighbours(guid, reference, distance, quality, elephantwalkurl):
     url = "{0}/sample/findneighbour/snp/{1}/{2}/{3}/elephantwalk/{4}".format(elephantwalkurl, guid, reference, distance, quality)
     print("Url: {0}".format(url))
     r = requests.get(url)
-    walkjson = json.loads(r.text)
-    guids = []
-    for entry in walkjson:
-        print(entry)
-        guids.append(entry)
-    if not guids:
-        print("Warning: elephantwalk returned 0 guids")
+    ret = json.loads(r.text)
+    if ret[0] == "Err" or ret[0] == "Bad":
+        print("guid: {0}, elephantwalk returned: {1}".format(guid, ret))
         return []
-    print("Found {0} guids".format(len(guids)))
-    #print(guids)
-    return guids
+    else:
+        print("guid: {0}, elephantwalk returned {1} neighbours".format(guid, len(ret)))
+        return ret
 
 #
 # merge fasta files from guids into a multifasta file
