@@ -287,6 +287,12 @@ def get_neighbours2(guid):
 def get_tree(guid):
     return get_run_index(guid, 10)
 
+@app.route('/trees/<guid>')
+def get_trees(guid):
+    with con, db_lock:
+        ret = con.execute('select sample_guid,reference,distance,quality from complete where sample_guid = ?', (guid,)).fetchall()
+    return json.dumps(ret)
+
 @app.route('/ndgraph/<guid>')
 def get_graph(guid):
     reference = request.args.get('reference')
