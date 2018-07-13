@@ -430,7 +430,7 @@ def sync_lookup_table():
         for row in rows:
             con.execute('insert into sample_lookup_table values (?, ?)', (str(row.id), row.name))
 
-    name.cache_clear()
+    do_lookup.cache_clear()
 
     cas_cluster.shutdown()
     return redirect('/')
