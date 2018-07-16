@@ -50,6 +50,10 @@ return svg plot of distance-neighbours points
 
 return tree from database or add to run queue if not in database
 
+### `/trees/<guid>`
+
+return completed trees for guid from database
+
 ### `/new_run?guid=<guid>&reference=R00000039&distance=20&quality=0.80`
 
 Same as `/tree` but the guid is a query parameter
