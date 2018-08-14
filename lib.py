@@ -7,6 +7,7 @@ from config import cfg
 
 import datetime
 import dateutil.relativedelta
+from collections import Counter
 
 def hms_timediff(epochtime_start, epochtime_end):
     td = dateutil.relativedelta.relativedelta(datetime.datetime.fromtimestamp(float(epochtime_start)),
@@ -52,3 +53,23 @@ def concat_fasta(guids, names, reference, out_file):
             out.write(">{0}_{1}\n".format(name, guid))
             out.write("{0}\n".format(fasta))
 
+#
+# count bases of output file from openmpsequencer, return counter of 'A','C','G','T'
+# read the first line of the file: 
+# model:A,C,G,A,T....
+#
+def count_bases(openmpsequencer_output):
+   counter = Counter()
+
+   with open(openmpsequencer_output) as f:
+       lines = f.readlines()
+
+   for line in lines:
+       content = line.split(":")
+       if "model" in content[0]:
+           model = content[1].split(",")
+
+   for entry in model:
+       counter[entry] += 1
+
+   return counter.most_common(4)
