@@ -30,28 +30,53 @@ def get_neighbours(guid, reference, distance, quality, elephantwalkurl):
         return ret
 
 #
+#
+#
+def iterate_neighbours(guids, names, reference, pattern):
+    for n in range(len(guids)):
+        guid = guids[n]
+        name = names[n]
+        print(guid)
+        pattern_final = pattern.format(guid, reference)
+        print(pattern_final)
+        files = glob.glob(pattern_final)
+        if not files:
+            print("ERROR: Couldn't find file matching pattern {0}".format(pattern_final))
+            exit(1)
+        if len(files) > 1:
+            print("ERROR: Found more than one file matching pattern {0}".format(pattern_final))
+            exit(1)
+        print("processing {0}".format(files))
+        yield(guid, name, files)
+
+#
 # merge fasta files from guids into a multifasta file
 #
-def concat_fasta(guids, names, reference, out_file):
+def concat_fasta(guids, names, reference, pattern, out_file):
     with open(out_file, "w") as out:
-        for n in range(len(guids)):
-            guid = guids[n]
-            name = names[n]
-            print(guid)
-            pattern = cfg['pattern'].format(guid, reference)
-            files = glob.glob(pattern)
-            if not files:
-                print("ERROR: Couldn't find file matching pattern {0}".format(pattern))
-                exit(1)
-            if len(files) > 1:
-                print("ERROR: Found more than one file matching pattern {0}".format(pattern))
-                exit(1)
-            print("processing {0}".format(files[0]))
-            fasta_gzip = open(files[0], mode="rb").read()
-            fasta = "".join(gzip.decompress(fasta_gzip).decode('ascii').split('\n')[1:])
+        for guid,name,files in iterate_neighbours(guids,names,reference,pattern):
+            with open(files[0], mode="rb") as fasta_gzip_f:
+                fasta_gzip = fasta_gzip_f.read()
+                fasta = "".join(gzip.decompress(fasta_gzip).decode('ascii').split('\n')[1:])
 
-            out.write(">{0}_{1}\n".format(name, guid))
-            out.write("{0}\n".format(fasta))
+                out.write(">{0}_{1}\n".format(name, guid))
+                out.write("{0}\n".format(fasta))            
+
+#
+# create meta file for openmpsequencer, which has a list of guid and fasta file path
+# line format: guid, space or tab, absolute path
+#
+def generate_openmpseq_metafile(guids, names, reference, pattern, out_file):
+    with open(out_file, "w") as f:
+        for guid,_,files in iterate_neighbours(guids,names,reference,pattern):
+            f.write("{0}\t{1}\n".format(guid,files[0]))
+
+
+#
+#run openmpsequencer with metafile as input, produce output for count_bases
+#
+def run_openmpsequencer(metafile):
+    pass
 
 #
 # count bases of output file from openmpsequencer, return counter of 'A','C','G','T'

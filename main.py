@@ -159,7 +159,7 @@ def demon_interface():
 
         names = get_names(neighbour_guids)
 
-        lib.concat_fasta(neighbour_guids, names, reference, "merged_fasta")
+        lib.concat_fasta(neighbour_guids, names, reference, cfg['pattern'], "merged_fasta")
 
         if int(cores) > len(neighbour_guids):
             cores = str(min(1, len(neighbour_guids) - 1))
