@@ -1,0 +1,3 @@
+0c22021d-7ef9-4872-a9ad-0665ab485ad3	./tests/data/0c22021d-7ef9-4872-a9ad-0665ab485ad3_v3.fasta.gz
+0f67261f-f1e6-4ba6-9ae9-43ab8e3d89d1	./tests/data/0f67261f-f1e6-4ba6-9ae9-43ab8e3d89d1_v3.fasta.gz
+1a523b78-e1e7-4a58-a8d4-7c9c8de2170c	./tests/data/1a523b78-e1e7-4a58-a8d4-7c9c8de2170c_v3.fasta.gz
