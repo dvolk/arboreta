@@ -9,6 +9,8 @@ import threading
 import time
 import yaml
 import functools
+import pathlib
+import tempfile
 
 import lib
 
@@ -164,8 +166,22 @@ def demon_interface():
         if int(cores) > len(neighbour_guids):
             cores = str(min(1, len(neighbour_guids) - 1))
 
+        metafile_tmp = tempfile.mktemp()
+        lib.generate_openmpseq_metafile(neighbour_guids, names, reference,
+                                        cfg['pattern'], metafile_tmp)
+        openmpseq_out_dir = tempfile.mkdtemp()
+        lib.run_openmpsequencer(cfg['openmpsequencer_bin_path'], metafile_tmp, openmpseq_out_dir)
+
+        counts = lib.count_bases(pathlib.Path(openmpseq_out_dir) / "sequencer_count_bases.txt")
+        print(counts)
+        base_counts = [str(counts[base]) for base in ['A','C','G','T']]
+        base_counts_str = ",".join(base_counts)
+        print(base_counts_str)
+            
         print("running iqtree")
-        ret = os.system("{0} -s merged_fasta -st DNA -m GTR+I -blmin 0.00000001 -nt {1}".format(iqtreepath, cores))
+        cmd_line = "{0} -s merged_fasta -st DNA -m GTR+I -blmin 0.00000001 -nt {1} -fconst {2}".format(iqtreepath, cores, base_counts_str)
+        print(cmd_line)
+        ret = os.system(cmd_line)
         os.chdir(old_dir)
         return (ret, neighbour_guids)
 

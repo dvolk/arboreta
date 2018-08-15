@@ -2,6 +2,7 @@ import json
 import requests
 import glob
 import gzip
+import os
 
 from config import cfg
 
@@ -75,18 +76,18 @@ def generate_openmpseq_metafile(guids, names, reference, pattern, out_file):
 #
 #run openmpsequencer with metafile as input, produce output for count_bases
 #
-def run_openmpsequencer(metafile):
-    pass
+def run_openmpsequencer(openseq_bin_path, metafile, out_dir):
+    os.system("{0} -t 1 -s {1} -o {2}".format(openseq_bin_path, metafile, out_dir))
 
 #
 # count bases of output file from openmpsequencer, return counter of 'A','C','G','T'
 # read the first line of the file: 
 # model:A,C,G,A,T....
 #
-def count_bases(openmpsequencer_output):
+def count_bases(openmpsequencer_output_filename):
    counter = Counter()
 
-   with open(openmpsequencer_output) as f:
+   with open(openmpsequencer_output_filename) as f:
        lines = f.readlines()
 
    for line in lines:
@@ -97,4 +98,4 @@ def count_bases(openmpsequencer_output):
    for entry in model:
        counter[entry] += 1
 
-   return counter.most_common(4)
+   return counter
