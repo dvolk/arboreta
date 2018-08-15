@@ -7,8 +7,8 @@ import lib
 class Test_Lib(unittest.TestCase):
     def setUp(self):
         self.guids = ["0c22021d-7ef9-4872-a9ad-0665ab485ad3",
-                 "0f67261f-f1e6-4ba6-9ae9-43ab8e3d89d1",
-                 "1a523b78-e1e7-4a58-a8d4-7c9c8de2170c"]
+                      "0f67261f-f1e6-4ba6-9ae9-43ab8e3d89d1",
+                      "1a523b78-e1e7-4a58-a8d4-7c9c8de2170c"]
         self.names = ['a', 'b', 'c']
         self.reference = 'R00000039'
         self.pattern = "./tests/data/{0}_v3.fasta.gz"
@@ -56,8 +56,7 @@ class Test_Lib(unittest.TestCase):
         print(out_count_bases_file)
         self.assertTrue(out_count_bases_file.is_file())
         counts = lib.count_bases(out_count_bases_file)
-        self.assertEqual(counts[0], ('C', 1318851))
-        self.assertEqual(counts[1], ('G', 1314135))
-        self.assertEqual(counts[2], ('T', 695061))
-        self.assertEqual(counts[3], ('A', 694854))
+        print(counts)
+        counts_acgt = [counts[base] for base in ['A', 'C', 'G', 'T']]
+        self.assertEqual(counts_acgt, [694854, 1318851, 1314135, 695061])
         
