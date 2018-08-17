@@ -1,6 +1,6 @@
 # arboreta
 
-## Install
+## Install instructions
 
 ```
 $ sudo apt install python3-dateutil python3-yaml python3-matplotlib python3-cassandra
