@@ -54,7 +54,7 @@ def iterate_neighbours(guids, names, reference, pattern):
 # merge fasta files from guids into a multifasta file
 #
 def concat_fasta(guids, names, reference, pattern, out_file):
-    with open(out_file, "w") as out:
+    with open(str(out_file), "w") as out:
         for guid,name,files in iterate_neighbours(guids,names,reference,pattern):
             with open(files[0], mode="rb") as fasta_gzip_f:
                 fasta_gzip = fasta_gzip_f.read()
@@ -68,7 +68,7 @@ def concat_fasta(guids, names, reference, pattern, out_file):
 # line format: guid, space or tab, absolute path
 #
 def generate_openmpseq_metafile(guids, names, reference, pattern, out_file):
-    with open(out_file, "w") as f:
+    with open(str(out_file), "w") as f:
         for guid,_,files in iterate_neighbours(guids,names,reference,pattern):
             f.write("{0}\t{1}\n".format(guid,files[0]))
 
@@ -87,7 +87,7 @@ def run_openmpsequencer(openseq_bin_path, metafile, out_dir):
 def count_bases(openmpsequencer_output_filename):
    counter = Counter()
 
-   with open(openmpsequencer_output_filename) as f:
+   with open(str(openmpsequencer_output_filename)) as f:
        lines = f.readlines()
 
    for line in lines:
