@@ -163,8 +163,8 @@ def demon_interface():
 
         lib.concat_fasta(neighbour_guids, names, reference, cfg['pattern'], "merged_fasta")
 
-        if int(cores) > len(neighbour_guids):
-            cores = str(min(1, len(neighbour_guids) - 1))
+#        if int(cores) > len(neighbour_guids):
+#            cores = str(min(1, len(neighbour_guids) - 1))
 
         metafile_tmp = tempfile.mktemp()
         lib.generate_openmpseq_metafile(neighbour_guids, names, reference,
@@ -190,7 +190,7 @@ def demon_interface():
     #
     while True:
         with db_lock, con:
-            elem = con.execute('select * from queue order by epoch_added desc limit 1').fetchall()
+            elem = con.execute('select * from queue where status = "queued" order by epoch_added desc limit 1').fetchall()
 
         if elem:
             elem = elem[0]
@@ -301,7 +301,7 @@ def get_neighbours2(guid):
 
 @app.route('/tree/<guid>')
 def get_tree(guid):
-    return get_run_index(guid, 10)
+    return lib.rescale_newick(get_run_index(guid, 10))
 
 @app.route('/trees/<guid>')
 def get_trees(guid):

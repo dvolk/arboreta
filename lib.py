@@ -3,6 +3,8 @@ import requests
 import glob
 import gzip
 import os
+import newick
+from sys import float_info
 
 from config import cfg
 
@@ -81,7 +83,7 @@ def run_openmpsequencer(openseq_bin_path, metafile, out_dir):
 
 #
 # count bases of output file from openmpsequencer, return counter of 'A','C','G','T'
-# read the first line of the file: 
+# read the first line of the file:
 # model:A,C,G,A,T....
 #
 def count_bases(openmpsequencer_output_filename):
@@ -99,3 +101,27 @@ def count_bases(openmpsequencer_output_filename):
        counter[entry] += 1
 
    return counter
+
+#
+# rescale newick so that minimum length is 1
+#
+def rescale_newick(trees_str):
+    trees = newick.loads(trees_str)
+
+    lmin = float_info.max
+    lmax = -float_info.max
+
+    for tree in trees:
+        for n in tree.walk():
+            if n.length > lmax:
+                lmax = n.length
+            if n.length < lmin and not n.length == 0:
+                lmin = n.length
+
+    factor = 1 / lmin
+    for tree in trees:
+        for n in tree.walk():
+            n.length = int(n.length * factor)
+
+    return newick.dumps(trees)
+
