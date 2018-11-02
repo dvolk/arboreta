@@ -24,6 +24,9 @@ from io import StringIO
 
 from config import cfg
 
+from flasgger import Swagger
+
+
 con = sqlite3.connect(cfg['sqlitedbfilepath'], check_same_thread=False)
 db_lock = threading.Lock()
 
@@ -177,7 +180,7 @@ def demon_interface():
         base_counts = [str(counts[base]) for base in ['A','C','G','T']]
         base_counts_str = ",".join(base_counts)
         print(base_counts_str)
-            
+
         print("running iqtree")
         cmd_line = "{0} -s merged_fasta -st DNA -m GTR+I -blmin 0.00000001 -nt {1} -fconst {2}".format(iqtreepath, cores, base_counts_str)
         print(cmd_line)
@@ -222,6 +225,7 @@ T = threading.Thread(target=demon_interface)
 T.start()
 
 app = Flask(__name__)
+swagger = Swagger(app)
 
 #
 # return nth column from run table. add run to queue if it doesn't exist
@@ -265,6 +269,12 @@ def root_page():
 #
 @app.route('/status')
 def status():
+    """Endpoint returning running, queued and completed trees
+    ---
+    responses:
+      200:
+        description: array of arrays containing sample guid, reference, distance, quality, start time, end time
+    """
     with db_lock, con:
         running = con.execute('select sample_guid, reference, distance, quality from queue where status = "RUNNING"').fetchall()
         queued = con.execute('select sample_guid, reference, distance, quality from queue where status <> "RUNNING"').fetchall()
@@ -280,6 +290,29 @@ def status():
 # just guids
 @app.route('/neighbours/<guid>')
 def get_neighbours(guid):
+    """Endpoint returning neighbour guids for guid
+    ---
+    parameters:
+      - name: guid
+        in: path
+        required: true
+        type: string
+      - name: reference
+        in: query
+        type: string
+        required: false
+      - name: distance
+        in: query
+        type: string
+        required: false
+      - name: quality
+        in: query
+        type: string
+        required: false
+    responses:
+      200:
+        description: array of guids
+    """
     reference = request.args.get('reference')
     if not reference: reference = cfg['default_reference']
     distance = request.args.get('distance')
@@ -291,6 +324,29 @@ def get_neighbours(guid):
 # guids + distances
 @app.route('/neighbours2/<guid>')
 def get_neighbours2(guid):
+    """Endpoint returning neighbour guids and distances for guid
+    ---
+    parameters:
+      - name: guid
+        in: path
+        required: true
+        type: string
+      - name: reference
+        in: query
+        type: string
+        required: false
+      - name: distance
+        in: query
+        type: string
+        required: false
+      - name: quality
+        in: query
+        type: string
+        required: false
+    responses:
+      200:
+        description: array of [guid, distance]
+    """
     reference = request.args.get('reference')
     if not reference: reference = cfg['default_reference']
     distance = request.args.get('distance')
@@ -301,16 +357,70 @@ def get_neighbours2(guid):
 
 @app.route('/tree/<guid>')
 def get_tree(guid):
+    """Endpoint returning rescaled newick tree string for guid
+    ---
+    parameters:
+      - name: guid
+        in: path
+        required: true
+        type: string
+      - name: reference
+        in: query
+        type: string
+        required: false
+      - name: distance
+        in: query
+        type: string
+        required: false
+      - name: quality
+        in: query
+        type: string
+        required: false
+    responses:
+      200:
+        description: rescaled newick tree string
+    """
     return lib.rescale_newick(get_run_index(guid, 10))
 
 @app.route('/trees/<guid>')
 def get_trees(guid):
+    """Endpoint returning array of [sample_guid,reference,distance,quality] for completed trees of guid
+    ---
+    parameters:
+      - name: guid
+        in: path
+        required: true
+        type: string
+    """
     with con, db_lock:
         ret = con.execute('select sample_guid,reference,distance,quality from complete where sample_guid = ?', (guid,)).fetchall()
     return json.dumps(ret)
 
 @app.route('/ndgraph/<guid>')
 def get_graph(guid):
+    """Endpoint returning rescaled newick tree string for guid
+    ---
+    parameters:
+      - name: guid
+        in: path
+        required: true
+        type: string
+      - name: reference
+        in: query
+        type: string
+        required: false
+      - name: distance
+        in: query
+        type: string
+        required: false
+      - name: quality
+        in: query
+        type: string
+        required: false
+    responses:
+      200:
+        description: rescaled newick tree string
+    """
     reference = request.args.get('reference')
     if not reference: reference = cfg['default_reference']
     quality = request.args.get('quality')
@@ -319,6 +429,29 @@ def get_graph(guid):
 
 @app.route('/ndgraph2/<guid>')
 def get_graph2(guid):
+    """Endpoint returning graph (variant 2)
+    ---
+    parameters:
+      - name: guid
+        in: path
+        required: true
+        type: string
+      - name: reference
+        in: query
+        type: string
+        required: false
+      - name: distance
+        in: query
+        type: string
+        required: false
+      - name: quality
+        in: query
+        type: string
+        required: false
+    responses:
+      200:
+        description:
+    """
     reference = request.args.get('reference')
     if not reference: reference = cfg['default_reference']
     quality = request.args.get('quality')
@@ -327,6 +460,29 @@ def get_graph2(guid):
 
 @app.route('/ndgraph3/<guid>')
 def get_graph3(guid):
+    """Endpoint returning graph (variant 3)
+    ---
+    parameters:
+      - name: guid
+        in: path
+        required: true
+        type: string
+      - name: reference
+        in: query
+        type: string
+        required: false
+      - name: distance
+        in: query
+        type: string
+        required: false
+      - name: quality
+        in: query
+        type: string
+        required: false
+    responses:
+      200:
+        description:
+    """
     reference = request.args.get('reference')
     if not reference: reference = cfg['default_reference']
     quality = request.args.get('quality')
@@ -339,6 +495,29 @@ def get_graph3(guid):
 
 @app.route('/ndgraph.svg/<guid>')
 def get_graph_svg(guid):
+    """Endpoint returning matplotlib svg graph
+    ---
+    parameters:
+      - name: guid
+        in: path
+        required: true
+        type: string
+      - name: reference
+        in: query
+        type: string
+        required: false
+      - name: distance
+        in: query
+        type: string
+        required: false
+      - name: quality
+        in: query
+        type: string
+        required: false
+    responses:
+      200:
+        description:
+    """
     reference = request.args.get('reference')
     if not reference: reference = cfg['default_reference']
     quality = request.args.get('quality')
@@ -375,11 +554,40 @@ def get_graph_svg(guid):
 
 @app.route('/new_run')
 def new_run():
+    """Endpoint starting a new run (query arguments)
+    ---
+    parameters:
+      - name: guid
+        in: query
+        required: true
+        type: string
+      - name: reference
+        in: query
+        type: string
+        required: false
+      - name: distance
+        in: query
+        type: string
+        required: false
+      - name: quality
+        in: query
+        type: string
+        required: false
+    responses:
+      200:
+        description:
+    """
     guid = request.args.get('guid')
     return get_run_index(guid, 10)
 
 @app.route('/queue')
 def get_queue():
+    """Endpoint returning tree queue
+    ---
+    responses:
+      200:
+        description:
+    """
     with db_lock, con:
         ret = []
         queued = con.execute('select sample_guid, reference, distance, quality, status, epoch_added, epoch_start, "" from queue').fetchall()
@@ -394,6 +602,12 @@ def get_queue():
 
 @app.route('/complete')
 def get_complete():
+    """Endpoint returning completed trees
+    ---
+    responses:
+      200:
+        description:
+    """
     with db_lock, con:
         ret = []
         completed = con.execute('select sample_guid, reference, distance, quality, "DONE", epoch_added, epoch_start, epoch_end from complete').fetchall()
@@ -417,6 +631,17 @@ def do_lookup(name, is_guid):
 
 @app.route('/lookup/<names>')
 def lookup(names):
+    """Endpoint mapping names to guids
+    ---
+    parameters:
+      - name: names
+        in: path
+        required: true
+        type: string
+    responses:
+      200:
+        description: given a name return guid, given a guid, return name
+    """
     ret = []
     names = names.replace("[", "")
     names = names.replace("]", "")
@@ -439,6 +664,12 @@ def lookup(names):
 
 @app.route('/sync_sample_lookup_table')
 def sync_lookup_table():
+    """Download names and guids from cassandra (blocking)
+    ---
+    responses:
+      200:
+        description:
+    """
     from cassandra.cluster import Cluster
     from cassandra.auth import PlainTextAuthProvider
 
