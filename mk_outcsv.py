@@ -6,7 +6,7 @@ import json
 import functools
 
 con = sqlite3.connect('/tmp/arboreta.sqlite')
-samples = [ [row[0],row[1]] for row in con.execute('select name,guid from sample_lookup_table').fetchall() ]
+samples = [[row[0],row[1]] for row in con.execute('select name,guid from sample_lookup_table').fetchall()]
 
 def get_guids(sample_name):
     ret = []
@@ -35,6 +35,7 @@ def get_neighbours(guid, reference, distance, quality, elephantwalkurl):
         return ret
 
 def main():
+    i = 0
     out_table = []
 
     with open(sys.argv[1]) as map_file:
@@ -45,14 +46,21 @@ def main():
         y = { datum[2]:int(datum[5]) for datum in map_data if len(datum) > 4 }
 
         for sampleA_name in sample_names:
+            sys.stderr.write("sample number: {0}\n".format(i))
+            sys.stderr.flush()
+            i = i + 1
             # print(sampleA_name)
             guidsA = get_guids(sampleA_name)
+            sys.stderr.write('found {0} guids for sample name {1}\n'.format(len(guidsA), sampleA_name))
+            sys.stderr.flush()
             # print(guidsA)
             for guid in guidsA:
                 sampleB_disttable = []
                 # print(guid)
                 sampleB_disttable.append([guid, 0])
-                neighbours = get_neighbours(guid, 'R00000039', '20', '0.80', 'http://192.168.7.90:9184')
+                neighbours = get_neighbours(guid, 'R00000039', '50', '0.80', 'http://192.168.7.90:9184')
+                sys.stderr.write('found {0} neighbours for sample name {1} for guid {2}\n'.format(len(neighbours), sampleA_name, guid))
+                sys.stderr.flush()
                 if neighbours:
                     for neighbour in neighbours:
                         sampleB_disttable.append(neighbour)
