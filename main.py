@@ -11,27 +11,33 @@ import yaml
 import functools
 import pathlib
 import tempfile
-
-import lib
-
-from flask import Flask, request, render_template, make_response, redirect, abort
+from io import StringIO
+import collections
 
 from matplotlib.backends.backend_svg import FigureCanvasSVG as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.ticker import MaxNLocator
 
-from io import StringIO
-
-from config import cfg
-
+from flask import Flask, request, render_template, make_response, redirect, abort
 from flasgger import Swagger
 
+from config import cfg
+import lib
 
 con = sqlite3.connect(cfg['sqlitedbfilepath'], check_same_thread=False)
 db_lock = threading.Lock()
 
 with db_lock, con:
     con.execute("delete from queue")
+
+guid_tree_map = collections.defaultdict(list)
+    
+def make_guid_tree_map():
+    for sample_guids, tree in con.execute('select sample_guid, tree from complete'):
+        for sample_guid in sample_guids.split(','):
+            guid_tree_map[sample_guid].append(tree)
+
+make_guid_tree_map()
 
 class captured_output:
     def __init__(self):
@@ -125,19 +131,6 @@ def demon_interface():
         tree = open("data/{0}/merged_fasta.treefile".format(elem[0][1])).read()
         return tree
 
-    def get_names(guids):
-        names = []
-        with db_lock, con:
-            # CREATE TABLE sample_lookup_table(guid, name);
-            for guid in guids:
-                name = con.execute("select name from sample_lookup_table where guid = ?", (guid,)).fetchall()
-                if not name:
-                    print("WARNING: guid {0} has no name".format(guid))
-                    names.append("NA")
-                else:
-                    names.append(name[0][0])
-        return names
-
     #
     # get neighbours, make multifasta file and run iqtree
     #
@@ -162,12 +155,9 @@ def demon_interface():
         if "," not in guid:
             neighbour_guids.append(guid)
 
-        names = get_names(neighbour_guids)
+        names = neighbour_guids
 
         lib.concat_fasta(neighbour_guids, names, reference, cfg['pattern'], "merged_fasta")
-
-#        if int(cores) > len(neighbour_guids):
-#            cores = str(min(1, len(neighbour_guids) - 1))
 
         metafile_tmp = tempfile.mktemp()
         lib.generate_openmpseq_metafile(neighbour_guids, names, reference,
@@ -181,10 +171,27 @@ def demon_interface():
         base_counts_str = ",".join(base_counts)
         print(base_counts_str)
 
-        print("running iqtree")
-        cmd_line = "{0} -s merged_fasta -st DNA -m GTR+I -blmin 0.00000001 -nt {1} -fconst {2}".format(iqtreepath, cores, base_counts_str)
-        print(cmd_line)
-        ret = os.system(cmd_line)
+        # clamp number of cores 1-20
+        cores = sorted([1, len(neighbour_guids), 20])[1]
+
+        while True:
+            print("running iqtree")
+            cmd_line = "{0} -s merged_fasta -st DNA -m GTR+I -blmin 0.00000001 -nt {1} -fconst {2}".format(
+                iqtreepath, cores, base_counts_str)
+            print(cmd_line)
+            ret = os.system(cmd_line)
+            if ret != 0:
+                if cores > 1:
+                    print("WARNING: iqtree failed to run with {0} cores. Trying with {1} cores".format(
+                        cores, cores - 1))
+                    cores = cores - 1
+                else:
+                    print("ERROR: iqtree failed with cores == 1")
+                    break
+            else:
+                print("OK")
+                break
+        
         os.chdir(old_dir)
         return (ret, neighbour_guids)
 
@@ -203,13 +210,15 @@ def demon_interface():
                 con.execute('update queue set status = "RUNNING", epoch_start = ? where sample_guid = ? and reference = ? and distance = ? and quality = ?',
                             (started, elem[0], elem[4], elem[5], elem[6]))
 
-            # with captured_output() as E:
             ret, neighbour_guids = go(elem[0], elem[1], elem[4], elem[5], elem[6], elem[3], cfg['iqtreecores'],
                                       "../../contrib/iqtree-1.6.5-Linux/bin/iqtree")
-            # print(E.name)
 
             ended = str(int(time.time()))
-            tree = _get_tree(elem[0], elem[4], elem[5], elem[6])
+            if ret == 0:
+                tree = _get_tree(elem[0], elem[4], elem[5], elem[6])
+                guid_tree_map[elem[0]] = tree
+            else:
+                tree = "(error):0;"
             with db_lock, con:
                 con.execute('delete from queue where sample_guid = ? and reference = ? and distance = ? and quality = ?',
                             (elem[0], elem[4], elem[5], elem[6]))
@@ -267,6 +276,10 @@ def root_page():
 #
 # flask routes
 #
+@app.route('/trees_with_sample/<sample_guid>')
+def trees_with_sample(sample_guid):
+    return json.dumps([lib.rescale_newick(lib.relabel_newick(tree)) for tree in guid_tree_map[sample_guid]])
+
 @app.route('/status')
 def status():
     """Endpoint returning running, queued and completed trees
@@ -380,7 +393,7 @@ def get_tree(guid):
       200:
         description: rescaled newick tree string
     """
-    return lib.rescale_newick(get_run_index(guid, 10))
+    return lib.relabel_newick(lib.rescale_newick(get_run_index(guid, 10)))
 
 @app.route('/trees/<guid>')
 def get_trees(guid):

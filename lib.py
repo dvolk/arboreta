@@ -1,21 +1,37 @@
 import json
-import requests
 import glob
 import gzip
 import os
-import newick
 from sys import float_info
-
-from config import cfg
-
+import sqlite3
+import threading
 import datetime
 import dateutil.relativedelta
 from collections import Counter
+
+import newick
+import requests
+
+from config import cfg
+
+con = sqlite3.connect(cfg['sqlitedbfilepath'], check_same_thread=False)
+db_lock = threading.Lock()
 
 def hms_timediff(epochtime_start, epochtime_end):
     td = dateutil.relativedelta.relativedelta(datetime.datetime.fromtimestamp(float(epochtime_start)),
                                               datetime.datetime.fromtimestamp(float(epochtime_end)))
     return "{0}h {1}m {2}s".format(td.days * 24 + td.hours, td.minutes, td.seconds)
+
+def unique_name_in_list(name, xs):
+    if name not in xs:
+        return name
+    else:
+        n = 0
+        while True:
+            composite = "{0}_v{1}".format(name, n)
+            if composite not in xs:
+                return composite
+            n = n + 1
 
 #
 # fetch sample neighbours from elephantwalk
@@ -45,12 +61,13 @@ def iterate_neighbours(guids, names, reference, pattern):
         files = glob.glob(pattern_final)
         if not files:
             print("ERROR: Couldn't find file matching pattern {0}".format(pattern_final))
-            exit(1)
+
         if len(files) > 1:
             print("ERROR: Found more than one file matching pattern {0}".format(pattern_final))
-            exit(1)
-        print("processing {0}".format(files))
-        yield(guid, name, files)
+
+        if files and len(files) == 1:
+            print("processing {0}".format(files))
+            yield(guid, name, files)
 
 #
 # merge fasta files from guids into a multifasta file
@@ -62,7 +79,7 @@ def concat_fasta(guids, names, reference, pattern, out_file):
                 fasta_gzip = fasta_gzip_f.read()
                 fasta = "".join(gzip.decompress(fasta_gzip).decode('ascii').split('\n')[1:])
 
-                out.write(">{0}_{1}\n".format(name, guid))
+                out.write(">{0}\n".format(name))
                 out.write("{0}\n".format(fasta))            
 
 #
@@ -101,6 +118,53 @@ def count_bases(openmpsequencer_output_filename):
        counter[entry] += 1
 
    return counter
+
+def get_eartag(guid, eartags):
+    '''
+    guid to eartag
+
+    first, get name, then map name to eartag
+    
+    if a name has no eartag, use _SAMPLE_NAME
+    '''
+    name = con.execute("select name from sample_lookup_table where guid = ?", (guid,)).fetchall()
+    if not name:
+        print("WARNING: guid '{0}' has no name".format(guid))
+        name = ""
+    else:
+        name = name[0][0]
+
+    print(name)
+    try:
+        cols = requests.get('http://192.168.7.30:5006/api/coordinates2/{0}'.format(name))
+        cols = cols.json()
+    except:
+        print("no eartag for {0}".format(name))
+        cols = list()
+
+    for r_name,_,_,_,_,_,_,r_eartag in cols:
+        if name == r_name:
+            new = unique_name_in_list(r_eartag, eartags)
+            eartags.append(new)
+            return new, eartags
+    else:
+        new = unique_name_in_list("_" + name, eartags)
+        eartags.append(new)
+        return new, eartags
+
+def relabel_newick(trees_str):
+    '''
+    Relabel newick tree from guid to eartag
+    '''
+    trees = newick.loads(trees_str)
+    eartags = []
+
+    for tree in trees:
+        for node in tree.walk():
+            if node.name:
+                node.name, eartags = get_eartag(node.name, eartags)
+
+    return newick.dumps(trees)
 
 #
 # rescale newick so that minimum length is 1
