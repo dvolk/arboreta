@@ -1,32 +1,36 @@
 import math
-import requests
 import sys
 import sqlite3
 import json
 import functools
+import collections
+
+import requests
+
+guids = collections.defaultdict(list)
+name = collections.defaultdict(str)
 
 con = sqlite3.connect('/tmp/arboreta.sqlite')
 samples = [[row[0],row[1]] for row in con.execute('select name,guid from sample_lookup_table').fetchall()]
 
+for sample_name, guid in samples:
+    guids[sample_name].append(guid)
+    name[guid] = sample_name
+    
 def get_guids(sample_name):
-    ret = []
-    for sample in samples:
-        if sample[0] == sample_name:
-            ret.append(sample[1])
-    return ret
+    return guids[sample_name]
 
 def get_sample_name(guid):
-    for sample in samples:
-        if sample[1] == guid:
-            return sample[0]
-    return None
+    return name[guid]
+
+s = requests.Session()
 
 @functools.lru_cache(maxsize=None)
 def get_neighbours(guid, reference, distance, quality, elephantwalkurl):
     url = "{0}/sample/findneighbour/snp/{1}/{2}/{3}/elephantwalk/{4}".format(elephantwalkurl, guid, reference, distance, quality)
 #    print("Url: {0}".format(url))
-    r = requests.get(url)
-    ret = json.loads(r.text)
+    ret = s.get(url).json()
+#    ret = json.loads(r.text)
     if not ret or ret[0] == "Err" or ret[0] == "Bad":
 #        print("guid: {0}, elephantwalk returned: {1}".format(guid, ret))
         return []

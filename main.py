@@ -31,8 +31,9 @@ with db_lock, con:
     con.execute("delete from queue")
 
 guid_tree_map = collections.defaultdict(list)
-    
+
 def make_guid_tree_map():
+    global guid_tree_map
     for sample_guids, tree in con.execute('select sample_guid, tree from complete'):
         for sample_guid in sample_guids.split(','):
             guid_tree_map[sample_guid].append(tree)
@@ -126,9 +127,9 @@ def demon_interface():
             elem = con.execute('select * from queue where sample_guid = ? and reference = ? and distance = ? and quality = ?',
                                (guid,reference,distance,quality)).fetchall()
         if not elem:
-            print("invariant failed: _get_neighbours")
+            print("invariant failed: _get_tree")
             exit(1)
-        tree = open("data/{0}/merged_fasta.treefile".format(elem[0][1])).read()
+        tree = open("data/{0}/merged_fasta.treefile".format(elem[0][1])).read().strip()
         return tree
 
     #
@@ -191,7 +192,7 @@ def demon_interface():
             else:
                 print("OK")
                 break
-        
+
         os.chdir(old_dir)
         return (ret, neighbour_guids)
 
@@ -216,7 +217,6 @@ def demon_interface():
             ended = str(int(time.time()))
             if ret == 0:
                 tree = _get_tree(elem[0], elem[4], elem[5], elem[6])
-                guid_tree_map[elem[0]] = tree
             else:
                 tree = "(error):0;"
             with db_lock, con:
@@ -225,6 +225,7 @@ def demon_interface():
                 con.execute('insert into complete values (?,?,?,?,?,?,?,?,?,?,?)',
                             (elem[0], elem[1], elem[3], elem[4], elem[5], elem[6], elem[7], started, ended, json.dumps(neighbour_guids), tree))
 
+            make_guid_tree_map()
             print("done with {0}", elem)
 
         if int(time.time()) % 100 == 0: print("daemon idle")
@@ -278,7 +279,9 @@ def root_page():
 #
 @app.route('/trees_with_sample/<sample_guid>')
 def trees_with_sample(sample_guid):
-    return json.dumps([lib.rescale_newick(lib.relabel_newick(tree)) for tree in guid_tree_map[sample_guid]])
+    xs = guid_tree_map[sample_guid]
+    print(xs)
+    return json.dumps([lib.rescale_newick(lib.relabel_newick(tree)) for tree in xs])
 
 @app.route('/status')
 def status():
@@ -625,11 +628,19 @@ def get_complete():
         ret = []
         completed = con.execute('select sample_guid, reference, distance, quality, "DONE", epoch_added, epoch_start, epoch_end from complete').fetchall()
         for row in completed:
-            neighbours_count = con.execute('select neighbours_count from neighbours where samples = ? and reference = ? and distance = ? and quality = ?',
+            # if the "sample name" contains a list of guids, just return the first one
+            if ',' in row[0]:
+                xs = row[0].split(',')
+                first = xs[0]
+                row = (first, *row[1:])
+                count = len(xs)
+            else:
+                neighbours_count = con.execute('select neighbours_count from neighbours where samples = ? and reference = ? and distance = ? and quality = ?',
                                            (row[0], row[1], row[2], row[3])).fetchall()
-            count = -1
-            if len(neighbours_count) > 0:
-                count = neighbours_count[0][0]
+                count = -1
+                if len(neighbours_count) > 0:
+                    count = neighbours_count[0][0]
+
             ret.append(list(row) + [count])
     return json.dumps(ret)
 
@@ -700,3 +711,5 @@ def sync_lookup_table():
 
     cas_cluster.shutdown()
     return redirect('/')
+
+app.run(host='192.168.7.30', port=5008)

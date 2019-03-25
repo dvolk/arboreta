@@ -2,13 +2,14 @@ import json
 import glob
 import gzip
 import os
+import functools
 from sys import float_info
 import sqlite3
 import threading
 import datetime
-import dateutil.relativedelta
 from collections import Counter
 
+import dateutil.relativedelta
 import newick
 import requests
 
@@ -80,7 +81,7 @@ def concat_fasta(guids, names, reference, pattern, out_file):
                 fasta = "".join(gzip.decompress(fasta_gzip).decode('ascii').split('\n')[1:])
 
                 out.write(">{0}\n".format(name))
-                out.write("{0}\n".format(fasta))            
+                out.write("{0}\n".format(fasta))
 
 #
 # create meta file for openmpsequencer, which has a list of guid and fasta file path
@@ -124,7 +125,7 @@ def get_eartag(guid, eartags):
     guid to eartag
 
     first, get name, then map name to eartag
-    
+
     if a name has no eartag, use _SAMPLE_NAME
     '''
     name = con.execute("select name from sample_lookup_table where guid = ?", (guid,)).fetchall()
@@ -136,7 +137,7 @@ def get_eartag(guid, eartags):
 
     print(name)
     try:
-        cols = requests.get('http://192.168.7.30:5006/api/coordinates2/{0}'.format(name))
+        cols = requests.get('http://192.168.7.30:5007/api/coordinates2/{0}'.format(name))
         cols = cols.json()
     except:
         print("no eartag for {0}".format(name))
@@ -152,7 +153,9 @@ def get_eartag(guid, eartags):
         eartags.append(new)
         return new, eartags
 
+@functools.lru_cache(maxsize=9999)
 def relabel_newick(trees_str):
+    print(trees_str)
     '''
     Relabel newick tree from guid to eartag
     '''
@@ -170,6 +173,8 @@ def relabel_newick(trees_str):
 # rescale newick so that minimum length is 1
 #
 def rescale_newick(trees_str):
+    import math
+
     trees = newick.loads(trees_str)
 
     lmin = float_info.max
@@ -185,7 +190,8 @@ def rescale_newick(trees_str):
     factor = 1 / lmin
     for tree in trees:
         for n in tree.walk():
-            n.length = int(n.length * factor)
+            n.length = n.length * factor
+            if n.length != 0:
+                n.length = 1 + math.sqrt(n.length)
 
     return newick.dumps(trees)
-
