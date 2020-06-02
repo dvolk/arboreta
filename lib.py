@@ -120,7 +120,7 @@ def count_bases(openmpsequencer_output_filename):
 
    return counter
 
-def get_eartag(guid, eartags):
+def get_eartag(guid, eartags, sample_name_eartag_map, guid_sample_name_map):
     '''
     guid to eartag
 
@@ -128,22 +128,23 @@ def get_eartag(guid, eartags):
 
     if a name has no eartag, use _SAMPLE_NAME
     '''
-    name = con.execute("select name from sample_lookup_table where guid = ?", (guid,)).fetchall()
+    name = guid_sample_name_map.get(guid)
     if not name:
         print("WARNING: guid '{0}' has no name".format(guid))
         name = ""
     else:
-        name = name[0][0]
+        print(name)
+        name = name[0][1]
 
     print(name)
     try:
-        cols = requests.get('http://192.168.7.30:5007/api/coordinates2/{0}'.format(name))
-        cols = cols.json()
+        cols = [[name, sample_name_eartag_map[name]]]
+        print(cols)
     except:
         print("no eartag for {0}".format(name))
         cols = list()
 
-    for r_name,_,_,_,_,_,_,r_eartag in cols:
+    for r_name, r_eartag in cols:
         if name == r_name:
             new = unique_name_in_list(r_eartag, eartags)
             eartags.append(new)
@@ -153,19 +154,28 @@ def get_eartag(guid, eartags):
         eartags.append(new)
         return new, eartags
 
+guid_sample_name_map = None
+
 @functools.lru_cache(maxsize=9999)
 def relabel_newick(trees_str):
     print(trees_str)
+
     '''
     Relabel newick tree from guid to eartag
     '''
     trees = newick.loads(trees_str)
     eartags = []
 
+    global guid_sample_name_map
+    if not guid_sample_name_map:
+        guid_sample_name_map = requests.get('http://127.0.0.1:5007/api/all_guid_sample_names').json()
+
+    sample_name_eartag_map = requests.get('http://127.0.0.1:5007/api/all_sample_names_eartags').json()
+
     for tree in trees:
         for node in tree.walk():
             if node.name:
-                node.name, eartags = get_eartag(node.name, eartags)
+                node.name, eartags = get_eartag(node.name, eartags, sample_name_eartag_map, guid_sample_name_map)
 
     return newick.dumps(trees)
 
@@ -190,8 +200,12 @@ def rescale_newick(trees_str):
     factor = 1 / lmin
     for tree in trees:
         for n in tree.walk():
-            n.length = n.length * factor
-            if n.length != 0:
-                n.length = 1 + math.sqrt(n.length)
+            n.length = n.length * 4411532
+            if n.length < 0.1:
+                n.length = 0
+            elif n.length <= 1:
+                pass
+            else:
+                n.length = math.sqrt(n.length)
 
     return newick.dumps(trees)

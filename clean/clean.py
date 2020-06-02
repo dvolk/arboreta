@@ -26,7 +26,7 @@ import sqlite3
 import json
 import functools
 
-con = sqlite3.connect('/tmp/arboreta.sqlite')
+con = sqlite3.connect('../../db/arboreta.sqlite')
 sample_dict = { row[1]:row[0] for row in con.execute('select * from sample_lookup_table').fetchall() }
 
 def does_it_exist(name, con):
@@ -36,23 +36,38 @@ def main():
     out_table = []
 
     with open(sys.argv[1], encoding='utf-8-sig') as map_file:
-        map_data = [x.split(',') for x in map_file.read().split('\n')]
+        map_data = [x.split('\t') for x in map_file.read().split('\n')]
         map_data_ = []
 
         for datum in map_data:
+            #sys.stderr.write(str(datum))
             if not datum: continue
             #print(datum)
-            name = datum[2]
-            #print(name)
+            try:
+                name = datum[2]
+            except:
+                sys.stderr.write(str(datum))
+                continue
 
             tries = 0
-            front = name[6]
+            try:
+                front = name[6]
+            except:
+                sys.stderr.write(str(datum))
+                continue
+
             if does_it_exist(name, con):
                 #print("found {0} after {1} tries".format(name, tries))
                 map_data_.append([*datum[0:2], name, *datum[3:]])
 
-            while front == '0':
-                af, lab, seq, year = name.split('-')
+            skip = False
+            while front == '0' and skip == False:
+                try:
+                    af, lab, seq, year = name.split('-')
+                except:
+                    sys.stderr.write(str(datum))
+                    skip = True
+                    break
                 seq = seq[1:]
                 name = "-".join([af, lab, seq, year])
                 if not seq:

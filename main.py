@@ -33,10 +33,12 @@ with db_lock, con:
 guid_tree_map = collections.defaultdict(list)
 
 def make_guid_tree_map():
-    global guid_tree_map
     for sample_guids, tree in con.execute('select sample_guid, tree from complete'):
         for sample_guid in sample_guids.split(','):
-            guid_tree_map[sample_guid].append(tree)
+            max_size = 0
+            if len(tree) > max_size:
+                guid_tree_map[sample_guid].append(tree)
+                max_size = len(tree)
 
 make_guid_tree_map()
 
@@ -626,7 +628,7 @@ def get_complete():
     """
     with db_lock, con:
         ret = []
-        completed = con.execute('select sample_guid, reference, distance, quality, "DONE", epoch_added, epoch_start, epoch_end from complete').fetchall()
+        completed = con.execute('select sample_guid, reference, distance, quality, "DONE", epoch_added, epoch_start, epoch_end from complete order by epoch_end desc').fetchall()
         for row in completed:
             # if the "sample name" contains a list of guids, just return the first one
             if ',' in row[0]:
@@ -712,4 +714,4 @@ def sync_lookup_table():
     cas_cluster.shutdown()
     return redirect('/')
 
-app.run(host='192.168.7.30', port=5008)
+app.run(host='127.0.0.1', port=5008)

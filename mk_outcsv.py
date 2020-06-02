@@ -10,7 +10,7 @@ import requests
 guids = collections.defaultdict(list)
 name = collections.defaultdict(str)
 
-con = sqlite3.connect('/tmp/arboreta.sqlite')
+con = sqlite3.connect('../db/arboreta.sqlite')
 samples = [[row[0],row[1]] for row in con.execute('select name,guid from sample_lookup_table').fetchall()]
 
 for sample_name, guid in samples:
@@ -28,7 +28,8 @@ s = requests.Session()
 @functools.lru_cache(maxsize=None)
 def get_neighbours(guid, reference, distance, quality, elephantwalkurl):
     url = "{0}/sample/findneighbour/snp/{1}/{2}/{3}/elephantwalk/{4}".format(elephantwalkurl, guid, reference, distance, quality)
-#    print("Url: {0}".format(url))
+    sys.stderr.write("Url: {0}\n".format(url))
+    sys.stderr.flush()
     ret = s.get(url).json()
 #    ret = json.loads(r.text)
     if not ret or ret[0] == "Err" or ret[0] == "Bad":
