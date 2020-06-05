@@ -34,29 +34,29 @@ s = requests.Session()
 
 def get_neighbours(guid, reference='R00000039', distance='50', quality='0.80', elephantwalkurl='http://192.168.7.90:9184'):
     url = "{0}/sample/findneighbour/snp/{1}/{2}/{3}/elephantwalk/{4}".format(elephantwalkurl, guid, reference, distance, quality)
-    ret = s.get(url).json()
+    ret1 = s.get(url).json()
 
     # elephant walk did not return a json list
-    if type(ret) != list:
-        return "No result", -10
+    if type(ret1) != list:
+        return "No result", -10, ret1
     # sample OK but has no neighbours
-    if len(ret) == 0:
-        return "Empty result", 0,
+    if len(ret1) == 0:
+        return "Empty result", 0, ret1
     # missing sample
-    if ret[0] == "Err":
-        return "Error Sample", -5
+    if ret1[0] == "Err":
+        return "Error Sample", -5, ret1
     # bad sample
-    if ret[0] == "Bad":
-        return "BAD sequence", -3
+    if ret1[0] == "Bad":
+        return "BAD sequence", -3, ret1
     # > 0 neighbours
-    return "OK", len(ret)
+    return "OK", len(ret1)
 
 def go(sample_names):
     for i, sample_name in enumerate(sample_names):
         guids = get_guids(sample_name)
         for guid in guids:
-            e_out = get_neighbours(guid)
-            print("{0},{1},{2},{3}".format(sample_name, guid, *e_out))
+            e_out = query_elephantwalk(guid)
+            print("{0},{1},{2},{3},{4}".format(sample_name, guid, *e_out))
             sys.stderr.write("{0}. {1} {2} {3} {4}\n".format(i, sample_name, guid, *e_out))
             sys.stderr.flush()
     
